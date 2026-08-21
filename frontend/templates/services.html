@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Public Services, RAG Chatbot & OCR — MedAlert Lucknow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-between selection:bg-red-500 selection:text-white">
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center font-extrabold text-xl shadow-md group-hover:scale-105 transition-transform">
+          ✚
+        </div>
+        <span class="font-bold text-xl font-heading tracking-tight text-slate-900">
+          med<span class="text-red-600">alert</span> <span class="text-slate-400 font-normal text-sm">/ lucknow</span>
+        </span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8 font-medium text-sm text-slate-600">
+        <a href="/" class="hover:text-red-600 transition">Home</a>
+        <a href="/hospitals" class="hover:text-red-600 transition">Hospital Finder</a>
+        <a href="/triage" class="hover:text-red-600 transition">Symptom Triage</a>
+        <a href="/services" class="text-red-600 font-bold">Public Services</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <button class="sos-trigger-btn sos-pulse-btn py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition">
+          🚨 Emergency SOS
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12">
+    <!-- Page Header -->
+    <div>
+      <span class="text-xs font-bold uppercase tracking-widest text-red-600">Lucknow Smart Care Suite</span>
+      <h1 class="text-3xl sm:text-4xl font-extrabold font-heading text-slate-900 mt-1">RAG Care Chatbot & Prescription OCR</h1>
+      <p class="text-slate-500 text-sm max-w-2xl mt-1">
+        Interact with our pandas-driven RAG retrieval engine for health guidance, digitize prescriptions via OCR, search Lucknow donors, and explore UP health schemes.
+      </p>
+    </div>
+
+    <!-- Interactive AI Tools Grid (RAG Chatbot + Prescription OCR) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Section 1: RAG-based Medical Care Chatbot -->
+      <section class="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-teal-100 text-teal-700 rounded-xl flex items-center justify-center font-bold text-xl">
+              🤖
+            </div>
+            <div>
+              <h2 class="text-xl font-bold font-heading text-slate-900">RAG Care Assistant</h2>
+              <p class="text-xs text-slate-500">Retrieves context from Lucknow hospitals, schemes & donor registries</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-full">● RAG Active</span>
+        </div>
+
+        <!-- Sample Quick Prompts -->
+        <div class="space-y-1.5">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Quick Prompt Suggestions:</div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-msg="Which hospitals in Gomti Nagar have cardiology?" class="chat-prompt-chip py-1.5 px-3 bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition">
+              🏥 Hospitals in Gomti Nagar?
+            </button>
+            <button type="button" data-msg="How do I apply for Ayushman Bharat in UP?" class="chat-prompt-chip py-1.5 px-3 bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition">
+              📜 Ayushman Bharat Eligibility?
+            </button>
+            <button type="button" data-msg="Are there O positive blood donors in Lucknow?" class="chat-prompt-chip py-1.5 px-3 bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition">
+              🩸 O+ Blood Donors?
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Stream Window -->
+        <div id="chat-message-stream" class="h-80 overflow-y-auto p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+          <div class="flex justify-start mb-3">
+            <div class="bg-white border border-slate-200 text-slate-800 p-3.5 rounded-2xl rounded-tl-none text-xs max-w-[85%] shadow-sm space-y-1">
+              <div class="font-bold text-red-600">🤖 MedAlert Care AI:</div>
+              <p class="leading-relaxed">
+                Hello! I am your Lucknow Care Assistant. You can ask me questions about hospital specialties, bed capacity, UP government schemes, or donor availability. How can I help you today?
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="chat-form" class="flex gap-2">
+          <input id="chat-input-field" type="text" placeholder="Ask a health, hospital, or scheme question..." class="flex-1 text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          <button type="submit" class="py-3 px-5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition">
+            Ask Assistant
+          </button>
+        </form>
+      </section>
+
+      <!-- Section 2: Prescription OCR Reader -->
+      <section class="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-bold text-xl">
+              📄
+            </div>
+            <div>
+              <h2 class="text-xl font-bold font-heading text-slate-900">Prescription OCR</h2>
+              <p class="text-xs text-slate-500">Digitize prescription images & lab reports</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Upload a prescription document to parse medications, dosage instructions, indications, and side effects.
+        </p>
+
+        <!-- Dropzone File Upload -->
+        <div class="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/40 rounded-2xl p-6 text-center transition">
+          <input type="file" id="ocr-file-input" accept="image/*,.pdf" class="hidden">
+          <label for="ocr-file-input" class="cursor-pointer block space-y-2">
+            <div class="w-12 h-12 bg-white text-purple-600 rounded-2xl shadow-sm flex items-center justify-center text-2xl mx-auto">
+              📤
+            </div>
+            <div class="text-xs font-bold text-slate-800">Click to Select Prescription Image</div>
+            <div class="text-[11px] text-slate-500">Supports JPG, PNG, PDF formats</div>
+          </label>
+        </div>
+
+        <div class="text-center">
+          <button type="button" id="ocr-sample-btn" class="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
+            ⚡ Run Sample Prescription OCR Scan
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Dynamic OCR Results Container -->
+    <div id="ocr-results-container" class="w-full"></div>
+
+    <!-- Section 3: Blood & Organ Donor Registry Search -->
+    <section class="space-y-6 pt-4 border-t border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center font-bold text-xl">
+            🩸
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold font-heading text-slate-900">Blood & Organ Donor Registry</h2>
+            <p class="text-xs text-slate-500">Search Lucknow volunteers registered for emergency blood transfusions and organ donations.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donor Filter Toolbar -->
+      <form id="donor-form" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <div class="lg:col-span-3">
+            <label for="donor-bg-filter" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Blood Group</label>
+            <select id="donor-bg-filter" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+              <option value="">All Blood Groups</option>
+              <option value="o+">O+</option>
+              <option value="o-">O-</option>
+              <option value="a+">A+</option>
+              <option value="a-">A-</option>
+              <option value="b+">B+</option>
+              <option value="b-">B-</option>
+              <option value="ab+">AB+</option>
+            </select>
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="donor-type-filter" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Registry Category</label>
+            <select id="donor-type-filter" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+              <option value="">All Categories</option>
+              <option value="blood">Blood Donors Only</option>
+              <option value="organ">Organ Registrants Only</option>
+            </select>
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="donor-area-filter" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Lucknow Area</label>
+            <input id="donor-area-filter" type="text" placeholder="Gomti Nagar, Hazratganj..." class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="donor-query" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search Keywords</label>
+            <input id="donor-query" type="text" placeholder="Donor name, organ..." class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2 border-t border-slate-100">
+          <button type="submit" class="py-2 px-5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+            Search Donor Registry
+          </button>
+        </div>
+      </form>
+
+      <!-- Donor Cards Grid -->
+      <div id="donor-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-live="polite">
+        <!-- Loaded dynamically via script.js -->
+      </div>
+    </section>
+
+    <!-- Section 4: UP Government Medical Schemes -->
+    <section class="space-y-6 pt-4 border-t border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center font-bold text-xl">
+            📜
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold font-heading text-slate-900">UP Government Medical Schemes</h2>
+            <p class="text-xs text-slate-500">Explore financial assistance programs, cashless treatment, and public health support schemes in Uttar Pradesh.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheme Filter Toolbar -->
+      <form id="scheme-form" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <div class="lg:col-span-8">
+            <label for="scheme-query" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search Schemes & Benefits</label>
+            <input id="scheme-query" type="text" placeholder="e.g. Ayushman, Jan Arogya, Maternity, TB..." class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+
+          <div class="lg:col-span-4">
+            <label for="scheme-dept-filter" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+            <select id="scheme-dept-filter" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="">All Departments</option>
+              <option value="Health and Family Welfare">Health & Family Welfare</option>
+              <option value="Government of Uttar Pradesh">Government of Uttar Pradesh</option>
+              <option value="National Health Mission">National Health Mission</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2 border-t border-slate-100">
+          <button type="submit" class="py-2 px-5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-sm">
+            Find Matching Schemes
+          </button>
+        </div>
+      </form>
+
+      <!-- Scheme Cards Grid -->
+      <div id="scheme-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite">
+        <!-- Loaded dynamically via script.js -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Emergency SOS Dispatch Modal -->
+  <div id="sos-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border border-red-200 space-y-6">
+      <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-black text-4xl mx-auto animate-bounce">
+        🚨
+      </div>
+      <div>
+        <h3 class="text-2xl font-bold font-heading text-slate-900">Initiating SOS Dispatch</h3>
+        <p class="text-xs text-slate-500 mt-1">Connecting to Lucknow Emergency Control Room (112)</p>
+      </div>
+
+      <div class="sos-number text-6xl font-black text-red-600 font-heading" id="sos-countdown-val">5</div>
+      
+      <p id="sos-modal-status" class="text-xs text-slate-600 font-medium">
+        Stay on line. Paramedic dispatch beacon is activating...
+      </p>
+
+      <div class="pt-2">
+        <button id="sos-cancel-btn" class="w-full py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm rounded-xl transition">
+          Cancel Dispatch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-2">
+      <p class="font-semibold text-slate-700">MedAlert Lucknow Public Health Services & RAG Care Suite</p>
+      <p>Verify medical guidance and scheme details with certified healthcare professionals.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

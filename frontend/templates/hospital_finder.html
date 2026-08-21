@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hospital Finder — MedAlert Lucknow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-between selection:bg-red-500 selection:text-white">
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center font-extrabold text-xl shadow-md group-hover:scale-105 transition-transform">
+          ✚
+        </div>
+        <span class="font-bold text-xl font-heading tracking-tight text-slate-900">
+          med<span class="text-red-600">alert</span> <span class="text-slate-400 font-normal text-sm">/ lucknow</span>
+        </span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8 font-medium text-sm text-slate-600">
+        <a href="/" class="hover:text-red-600 transition">Home</a>
+        <a href="/hospitals" class="text-red-600 font-bold">Hospital Finder</a>
+        <a href="/triage" class="hover:text-red-600 transition">Symptom Triage</a>
+        <a href="/services" class="hover:text-red-600 transition">Public Services</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a href="/" class="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition">
+          ← Dashboard
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- Page Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div>
+        <span class="text-xs font-bold uppercase tracking-widest text-red-600">Care Network Directory</span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold font-heading text-slate-900 mt-1">Lucknow Hospital Readiness Finder</h1>
+        <p class="text-slate-500 text-sm max-w-2xl mt-1">
+          Search empanelled Lucknow hospitals by neighborhood, bed capacities, clinical specialties, and state insurance schemes.
+        </p>
+      </div>
+
+      <div>
+        <span id="hospital-count-badge" class="inline-block px-4 py-2 bg-red-100 text-red-700 font-bold text-xs rounded-full border border-red-200 shadow-sm">
+          Loading Directory...
+        </span>
+      </div>
+    </div>
+
+    <!-- Multi-field Filter Toolbar -->
+    <form id="hospital-form" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+        
+        <!-- Search query -->
+        <div class="lg:col-span-3">
+          <label for="hospital-query" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Hospital Name / Keyword</label>
+          <input id="hospital-query" type="text" placeholder="e.g. KGMU, Lohia, Medanta..." class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+        </div>
+
+        <!-- Area filter -->
+        <div class="lg:col-span-2">
+          <label for="area" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lucknow Area</label>
+          <input id="area" type="text" placeholder="Gomti Nagar, Chowk..." class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+        </div>
+
+        <!-- Specialty filter -->
+        <div class="lg:col-span-2">
+          <label for="specialty" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Specialty</label>
+          <input id="specialty" type="text" placeholder="Cardiology, Trauma..." class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+        </div>
+
+        <!-- Facility Type filter -->
+        <div class="lg:col-span-2">
+          <label for="facility-type" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Facility Type</label>
+          <select id="facility-type" class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+            <option value="">All Types</option>
+            <option value="Government">Government</option>
+            <option value="Private">Private</option>
+            <option value="Private Trust">Private Trust</option>
+          </select>
+        </div>
+
+        <!-- Empanelled Scheme filter -->
+        <div class="lg:col-span-3">
+          <label for="scheme-filter" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Empanelled Scheme</label>
+          <select id="scheme-filter" class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+            <option value="">All Schemes</option>
+            <option value="Ayushman">Ayushman Bharat</option>
+            <option value="Jan Arogya">CM Jan Arogya Yojana</option>
+            <option value="CGHS">CGHS</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100">
+        <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+          <input id="emergency" type="checkbox" checked class="w-4 h-4 text-red-600 rounded focus:ring-red-500 border-slate-300">
+          <span>Show Emergency & Trauma Ready Only (24/7)</span>
+        </label>
+
+        <div class="flex gap-2">
+          <button type="reset" onclick="setTimeout(loadHospitals, 50)" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+            Reset Filters
+          </button>
+          <button type="submit" class="py-2.5 px-6 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+            Search Hospitals
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Results Cards Grid -->
+    <section id="hospital-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite">
+      <!-- Loaded dynamically via script.js -->
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-2">
+      <p class="font-semibold text-slate-700">MedAlert Lucknow Hospital Directory · Prototype Data</p>
+      <p>Empanelled scheme listings and bed counts are mock data for hackathon demonstration. Always confirm with hospital triage desks.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

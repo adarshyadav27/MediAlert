@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trauma Triage & Emergency Assessment — MedAlert Lucknow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-between selection:bg-red-500 selection:text-white">
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center font-extrabold text-xl shadow-md group-hover:scale-105 transition-transform">
+          ✚
+        </div>
+        <span class="font-bold text-xl font-heading tracking-tight text-slate-900">
+          med<span class="text-red-600">alert</span> <span class="text-slate-400 font-normal text-sm">/ lucknow</span>
+        </span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8 font-medium text-sm text-slate-600">
+        <a href="/" class="hover:text-red-600 transition">Home</a>
+        <a href="/hospitals" class="hover:text-red-600 transition">Hospital Finder</a>
+        <a href="/triage" class="text-red-600 font-bold">Symptom Triage</a>
+        <a href="/services" class="hover:text-red-600 transition">Public Services</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <button class="sos-trigger-btn sos-pulse-btn py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition">
+          🚨 Emergency SOS
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <span class="text-xs font-bold uppercase tracking-widest text-red-600">Clinical Rule-based Assessment</span>
+      <h1 class="text-3xl sm:text-4xl font-extrabold font-heading text-slate-900 mt-1">Emergency Trauma Triage</h1>
+      <p class="text-slate-500 text-sm max-w-2xl mt-1">
+        Select all observed clinical symptoms and patient vital signs for automated urgency prioritization and Lucknow emergency hospital routing.
+      </p>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Triage Form & Result Column -->
+      <div class="lg:col-span-8 space-y-6">
+        <form id="triage-form" class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          
+          <div>
+            <h2 class="text-lg font-bold font-heading text-slate-900 mb-1">1. Select Observed Symptoms</h2>
+            <p class="text-xs text-slate-500 mb-4">Check all warning signs currently present in the patient:</p>
+
+            <!-- Categorized Symptoms -->
+            <div class="space-y-4">
+              
+              <!-- Critical category -->
+              <div class="p-4 bg-red-50/50 border border-red-100 rounded-2xl">
+                <div class="text-xs font-extrabold text-red-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <span>🚨 Critical Emergency Indicators</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-red-200 hover:border-red-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="unconscious" class="w-4 h-4 text-red-600 rounded">
+                    <span>Unconscious / Unresponsive</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-red-200 hover:border-red-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="severe bleeding" class="w-4 h-4 text-red-600 rounded">
+                    <span>Severe Uncontrolled Bleeding</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-red-200 hover:border-red-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="chest pain" class="w-4 h-4 text-red-600 rounded">
+                    <span>Severe Chest Pain / Pressure</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-red-200 hover:border-red-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="stroke" class="w-4 h-4 text-red-600 rounded">
+                    <span>Stroke / Facial Droop / Slurred Speech</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Urgent category -->
+              <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl">
+                <div class="text-xs font-extrabold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <span>⚠️ Urgent Clinical Symptoms</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-amber-200 hover:border-amber-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="breathing difficulty" class="w-4 h-4 text-amber-600 rounded">
+                    <span>Breathing Difficulty / Shortness</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-amber-200 hover:border-amber-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="head injury" class="w-4 h-4 text-amber-600 rounded">
+                    <span>Head Injury / Trauma</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-amber-200 hover:border-amber-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="fracture" class="w-4 h-4 text-amber-600 rounded">
+                    <span>Suspected Bone Fracture</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-xl border border-amber-200 hover:border-amber-400 transition font-semibold text-slate-800">
+                    <input type="checkbox" name="symptom" value="high fever" class="w-4 h-4 text-amber-600 rounded">
+                    <span>High Fever (>102°F) / Convulsions</span>
+                  </label>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Vitals inputs -->
+          <div class="pt-4 border-t border-slate-100">
+            <h2 class="text-lg font-bold font-heading text-slate-900 mb-1">2. Patient Vital Signs (Optional / Oximeter)</h2>
+            <p class="text-xs text-slate-500 mb-4">Enter recorded pulse oximeter and heart monitor values:</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label for="oxygen" class="block text-xs font-bold text-slate-600 mb-1">Oxygen SpO2 (%)</label>
+                <input id="oxygen" type="number" value="98" min="50" max="100" class="w-full text-sm font-semibold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+                <span class="text-[10px] text-slate-400">Normal range: 95-100%</span>
+              </div>
+              <div>
+                <label for="heart-rate" class="block text-xs font-bold text-slate-600 mb-1">Heart Rate (BPM)</label>
+                <input id="heart-rate" type="number" value="75" min="30" max="220" class="w-full text-sm font-semibold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+                <span class="text-[10px] text-slate-400">Normal range: 60-100 BPM</span>
+              </div>
+              <div>
+                <label for="sys-bp" class="block text-xs font-bold text-slate-600 mb-1">Systolic BP (mmHg)</label>
+                <input id="sys-bp" type="number" value="120" min="60" max="240" class="w-full text-sm font-semibold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
+                <span class="text-[10px] text-slate-400">Normal range: 90-130 mmHg</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" class="w-full py-4 px-6 bg-red-600 hover:bg-red-700 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-red-600/30 transition">
+              Assess Triage Urgency & Route Hospitals →
+            </button>
+          </div>
+        </form>
+
+        <!-- Dynamic Triage Output Container -->
+        <div id="triage-result" aria-live="polite"></div>
+      </div>
+
+      <!-- Emergency Action Side Panel -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-red-950 text-white rounded-3xl p-6 sm:p-8 border border-red-900 shadow-xl relative overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-48 h-48 bg-red-600/20 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="relative z-10 space-y-4">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-600/30 border border-red-500/30 rounded-full text-red-300 font-extrabold text-[11px] uppercase tracking-wider">
+              <span>🚨 Emergency Action</span>
+            </div>
+
+            <h3 class="text-2xl font-extrabold font-heading text-white">Need Immediate Ambulance?</h3>
+            <p class="text-xs text-red-200 leading-relaxed">
+              If the patient is unresponsive, suffering severe trauma, or in immediate distress, do not wait for online triage. Dispatch emergency services right now.
+            </p>
+
+            <button class="sos-trigger-btn w-full py-4 px-6 bg-red-600 hover:bg-red-500 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-red-600/40 transition flex items-center justify-center gap-2">
+              <span>Call Emergency 112</span>
+            </button>
+
+            <div class="pt-4 border-t border-red-900/60 text-xs text-red-300/80 space-y-2">
+              <div class="flex items-center justify-between">
+                <span>KGMU Trauma Desk:</span>
+                <a href="tel:05222257450" class="font-bold text-white hover:underline">0522-2257450</a>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>Lohia Institute Desk:</span>
+                <a href="tel:05226692000" class="font-bold text-white hover:underline">0522-6692000</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm text-xs space-y-3">
+          <h4 class="font-bold text-slate-900 text-sm">Medical Disclaimer & Guidelines</h4>
+          <p class="text-slate-500 leading-relaxed">
+            MedAlert Lucknow triage algorithm is built for initial decision support and demonstration during clinical intake workflows. It is not an automated medical diagnostic tool.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Emergency SOS Dispatch Modal -->
+  <div id="sos-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border border-red-200 space-y-6">
+      <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-black text-4xl mx-auto animate-bounce">
+        🚨
+      </div>
+      <div>
+        <h3 class="text-2xl font-bold font-heading text-slate-900">Initiating SOS Dispatch</h3>
+        <p class="text-xs text-slate-500 mt-1">Connecting to Lucknow Emergency Control Room (112)</p>
+      </div>
+
+      <div class="sos-number text-6xl font-black text-red-600 font-heading" id="sos-countdown-val">5</div>
+      
+      <p id="sos-modal-status" class="text-xs text-slate-600 font-medium">
+        Stay on line. Paramedic dispatch beacon is activating...
+      </p>
+
+      <div class="pt-2">
+        <button id="sos-cancel-btn" class="w-full py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm rounded-xl transition">
+          Cancel Dispatch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-2">
+      <p class="font-semibold text-slate-700">MedAlert Lucknow Triage Service</p>
+      <p>Always call 112 for immediate life-threatening medical emergencies.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
