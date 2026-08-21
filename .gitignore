@@ -1,23 +1,12 @@
-# Python
-__pycache__/
-*.pyc
-
-# Environment
-.env
-
-# RAG Data
-data/
-chroma_db/
-
-# Database
-*.db
-chat_history.db
-
-# Zip files
-*.zip
-
-# VS Code
-.vscode/
 .env
 *.env
+chroma_db/
+__pycache__/
+*/__pycache__/
+*.pyc
+chat_history.db
+
+data/*
+!data/lucknow_hospitals.json
+
 archive/
