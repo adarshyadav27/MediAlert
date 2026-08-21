@@ -1,0 +1,3 @@
+"""
+MediAlert API Package
+"""

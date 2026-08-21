@@ -1,0 +1,3007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MediAlert | AI Emergency Medical Intelligence</title>
+
+    <meta
+        name="description"
+        content="MediAlert - AI powered emergency medical response platform for Lucknow."
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<!-- =========================================================
+     AUTH SCREEN
+========================================================= -->
+
+<div id="auth-screen" class="auth-screen">
+
+    <div class="auth-visual">
+
+        <div class="brand-mark">+</div>
+
+        <div class="auth-visual-content">
+
+            <div class="eyebrow">
+                AI-POWERED • LUCKNOW
+            </div>
+
+            <h1>
+                Medical help
+                <span>shouldn't be complicated.</span>
+            </h1>
+
+            <p>
+                Emergency response, smart hospitals, medical AI,
+                OCR, blood support and healthcare services —
+                brought together in one intelligent platform.
+            </p>
+
+            <div class="auth-points">
+
+                <div>
+                    <strong>01</strong>
+                    <span>Emergency intelligence</span>
+                </div>
+
+                <div>
+                    <strong>02</strong>
+                    <span>RAG-powered medical guidance</span>
+                </div>
+
+                <div>
+                    <strong>03</strong>
+                    <span>Lucknow-focused healthcare</span>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <div class="auth-panel">
+
+        <div class="auth-brand">
+
+            <div class="brand-icon">+</div>
+
+            <div>
+                <strong>MediAlert</strong>
+                <small>MEDICAL INTELLIGENCE</small>
+            </div>
+
+        </div>
+
+
+        <div class="auth-card">
+
+            <div class="eyebrow">
+                WELCOME TO MEDIALERT
+            </div>
+
+            <h2 id="auth-title">
+                Your medical
+                <span>intelligence layer.</span>
+            </h2>
+
+            <p id="auth-subtitle">
+                Sign in to access your emergency and healthcare tools.
+            </p>
+
+
+            <!-- LOGIN -->
+
+            <form id="login-form" class="auth-form">
+
+                <label>
+                    Email
+
+                    <input
+                        id="login-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Password
+
+                    <input
+                        id="login-password"
+                        type="password"
+                        placeholder="••••••••"
+                        required
+                    >
+                </label>
+
+                <button
+                    type="submit"
+                    class="primary-button full"
+                >
+                    Sign in
+                    <span>→</span>
+                </button>
+
+            </form>
+
+
+            <!-- REGISTER -->
+
+            <form
+                id="register-form"
+                class="auth-form hidden"
+            >
+
+                <label>
+                    Full name
+
+                    <input
+                        id="register-name"
+                        type="text"
+                        placeholder="Your name"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Email
+
+                    <input
+                        id="register-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Password
+
+                    <input
+                        id="register-password"
+                        type="password"
+                        placeholder="Create password"
+                        required
+                    >
+                </label>
+
+                <button
+                    type="submit"
+                    class="primary-button full"
+                >
+                    Create account
+                    <span>→</span>
+                </button>
+
+            </form>
+
+
+            <div
+                id="auth-message"
+                class="auth-message"
+            ></div>
+
+
+            <div class="auth-switch">
+
+                <span id="auth-switch-text">
+                    Don't have an account?
+                </span>
+
+                <button
+                    id="auth-switch-button"
+                    type="button"
+                >
+                    Create one
+                </button>
+
+            </div>
+
+
+            <div class="medical-disclaimer">
+                MediAlert provides AI-assisted information.
+                It does not replace a qualified medical professional.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     APPLICATION
+========================================================= -->
+
+<div
+    id="app-shell"
+    class="app-shell hidden"
+>
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside
+        id="sidebar"
+        class="sidebar"
+    >
+
+        <div class="sidebar-brand">
+
+            <div class="brand-icon">
+                +
+            </div>
+
+            <div class="sidebar-brand-text">
+                <strong>MediAlert</strong>
+                <small>MEDICAL INTELLIGENCE</small>
+            </div>
+
+        </div>
+
+
+        <!-- SIDEBAR TOGGLE -->
+
+        <button
+            id="sidebar-toggle"
+            class="sidebar-toggle"
+            type="button"
+            aria-label="Toggle sidebar"
+        >
+            ☰
+        </button>
+
+
+        <!-- MAIN -->
+
+        <div class="sidebar-section">
+
+            <small>MAIN</small>
+
+            <button
+                class="nav-item active"
+                data-view="home"
+            >
+                <span>⌂</span>
+                <b>Home</b>
+            </button>
+
+            <button
+                class="nav-item"
+                data-view="ai"
+            >
+                <span>✦</span>
+                <b>AI Assistant</b>
+            </button>
+
+            <button
+                class="nav-item emergency-nav"
+                data-view="emergency"
+            >
+                <span>⚠</span>
+                <b>Emergency SOS</b>
+            </button>
+
+        </div>
+
+
+        <!-- HEALTHCARE -->
+
+        <div class="sidebar-section">
+
+            <small>HEALTHCARE</small>
+
+            <button
+                class="nav-item"
+                data-view="hospitals"
+            >
+                <span>⌂</span>
+                <b>Smart Hospitals</b>
+            </button>
+
+            <button
+                class="nav-item"
+                data-view="blood"
+            >
+                <span>●</span>
+                <b>Blood Support</b>
+            </button>
+
+            <button
+                class="nav-item"
+                data-view="ocr"
+            >
+                <span>▣</span>
+                <b>Medical OCR</b>
+            </button>
+
+            <button
+                class="nav-item"
+                data-view="prescription"
+            >
+                <span>▤</span>
+                <b>Prescription Reader</b>
+            </button>
+
+        </div>
+
+
+        <!-- PUBLIC SERVICES -->
+
+        <div class="sidebar-section">
+
+            <small>PUBLIC SERVICES</small>
+
+            <button
+                class="nav-item"
+                data-view="schemes"
+            >
+                <span>◇</span>
+                <b>Health Schemes</b>
+            </button>
+
+            <button
+                class="nav-item"
+                data-view="grievance"
+            >
+                <span>!</span>
+                <b>Grievance</b>
+            </button>
+
+            <button
+                class="nav-item"
+                data-view="nearby"
+            >
+                <span>⌖</span>
+                <b>Nearby Services</b>
+            </button>
+
+        </div>
+
+
+        <!-- SIDEBAR BOTTOM -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                id="theme-toggle"
+                class="sidebar-tool"
+                type="button"
+            >
+                <span>◐</span>
+                <span id="theme-label">
+                    Dark mode
+                </span>
+            </button>
+
+
+            <button
+                class="sidebar-tool"
+                data-view="account"
+                type="button"
+            >
+                <span>○</span>
+                <span>Account</span>
+            </button>
+
+
+            <button
+                id="logout-button"
+                class="sidebar-tool logout"
+                type="button"
+            >
+                <span>↪</span>
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+
+    <main class="main-area">
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <button
+                id="mobile-menu"
+                class="mobile-menu"
+                type="button"
+            >
+                ☰
+            </button>
+
+
+            <div class="topbar-location">
+                <span class="status-dot"></span>
+                Lucknow • Live
+            </div>
+
+
+            <div class="topbar-actions">
+
+                <button
+                    class="icon-button"
+                    id="top-theme-toggle"
+                    type="button"
+                    aria-label="Toggle theme"
+                >
+                    ◐
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE CONTAINER -->
+
+        <div class="page-container">
+
+
+            <!-- =================================================
+                 HOME
+            ================================================= -->
+
+            <section
+                id="view-home"
+                class="page-view active-view"
+            >
+
+                <div class="hero-grid">
+
+                    <div class="hero-content">
+
+                        <div class="eyebrow">
+                            AI-POWERED • LUCKNOW
+                        </div>
+
+                        <h1>
+                            Emergency care
+                            <span>shouldn't be complicated.</span>
+                        </h1>
+
+                        <p>
+                            MediAlert connects emergency response,
+                            intelligent hospitals, medical AI,
+                            blood support, OCR, prescriptions and
+                            healthcare schemes in one platform.
+                        </p>
+
+
+                        <div class="hero-actions">
+
+                            <button
+                                class="primary-button danger"
+                                data-view="emergency"
+                            >
+                                ⚠ Emergency SOS
+                                <span>→</span>
+                            </button>
+
+                            <button
+                                class="secondary-button"
+                                data-view="ai"
+                            >
+                                ✦ Ask MediAlert AI
+                                <span>→</span>
+                            </button>
+
+                        </div>
+
+
+                        <div class="hero-meta">
+                            <span>● Lucknow focused</span>
+                            <span>● RAG intelligence</span>
+                            <span>● Source aware</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="hero-orbit">
+
+                        <div class="orbit orbit-one"></div>
+                        <div class="orbit orbit-two"></div>
+                        <div class="orbit orbit-three"></div>
+
+                        <div class="ai-core">
+
+                            <div class="ai-star">
+                                ✦
+                            </div>
+
+                            <strong>
+                                MediAlert AI
+                            </strong>
+
+                            <small>
+                                Medical Intelligence
+                            </small>
+
+                            <span class="online">
+                                ● ONLINE
+                            </span>
+
+                        </div>
+
+
+                        <div class="orbit-label label-one">
+                            ✦ RAG Intelligence
+                        </div>
+
+                        <div class="orbit-label label-two">
+                            🏥 Smart Hospitals
+                        </div>
+
+                        <div class="orbit-label label-three">
+                            🩸 Blood Support
+                        </div>
+
+                        <div class="orbit-label label-four">
+                            ⚠ Emergency
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <small>
+                            CORE CAPABILITIES
+                        </small>
+
+                        <h2>
+                            Everything you need,
+                            <span>when it matters.</span>
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="feature-grid">
+
+                    <button
+                        class="feature-card"
+                        data-view="ai"
+                    >
+
+                        <div class="feature-icon purple">
+                            ✦
+                        </div>
+
+                        <small>
+                            01 • INTELLIGENCE
+                        </small>
+
+                        <h3>
+                            AI Medical Assistant
+                        </h3>
+
+                        <p>
+                            Ask medical questions using
+                            RAG-backed knowledge and get
+                            source-aware responses.
+                        </p>
+
+                        <span>
+                            Explore →
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="feature-card"
+                        data-view="hospitals"
+                    >
+
+                        <div class="feature-icon blue">
+                            ⌖
+                        </div>
+
+                        <small>
+                            02 • EMERGENCY
+                        </small>
+
+                        <h3>
+                            Smart Hospital Finder
+                        </h3>
+
+                        <p>
+                            Find suitable hospitals in
+                            Lucknow based on available
+                            facility data.
+                        </p>
+
+                        <span>
+                            Find hospitals →
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="feature-card"
+                        data-view="ocr"
+                    >
+
+                        <div class="feature-icon green">
+                            ▣
+                        </div>
+
+                        <small>
+                            03 • DOCUMENT AI
+                        </small>
+
+                        <h3>
+                            Medical OCR
+                        </h3>
+
+                        <p>
+                            Upload medical documents,
+                            capture using camera and
+                            extract useful information.
+                        </p>
+
+                        <span>
+                            Scan document →
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="feature-card"
+                        data-view="blood"
+                    >
+
+                        <div class="feature-icon red">
+                            ●
+                        </div>
+
+                        <small>
+                            04 • BLOOD SUPPORT
+                        </small>
+
+                        <h3>
+                            Blood Donor Network
+                        </h3>
+
+                        <p>
+                            Register donors and create
+                            emergency blood requests.
+                        </p>
+
+                        <span>
+                            Open support →
+                        </span>
+
+                    </button>
+
+                </div>
+
+
+                <div class="trust-banner">
+
+                    <div>
+
+                        <small>
+                            IMPORTANT
+                        </small>
+
+                        <h3>
+                            AI should assist decisions,
+                            not replace doctors.
+                        </h3>
+
+                        <p>
+                            MediAlert can provide information
+                            and help you navigate healthcare
+                            services, but urgent or serious
+                            situations require professional care.
+                        </p>
+
+                    </div>
+
+                    <button
+                        class="secondary-button"
+                        data-view="ai"
+                    >
+                        Learn about MediAlert AI →
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 AI ASSISTANT
+            ================================================= -->
+
+            <section
+                id="view-ai"
+                class="page-view"
+            >
+
+                <div class="page-header">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            MEDIALERT INTELLIGENCE
+                        </div>
+
+                        <h1>
+                            Ask your
+                            <span>medical AI.</span>
+                        </h1>
+
+                        <p>
+                            RAG-powered medical assistance
+                            with source-aware answers.
+                        </p>
+
+                    </div>
+
+                    <div class="ai-status">
+                        <span class="status-dot"></span>
+                        AI ONLINE
+                    </div>
+
+                </div>
+
+
+                <div class="ai-layout">
+
+                    <div class="chat-panel">
+
+                        <div
+                            id="chat-messages"
+                            class="chat-messages"
+                        >
+
+                            <div class="assistant-message">
+
+                                <div class="message-avatar">
+                                    ✦
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        MediAlert AI
+                                    </strong>
+
+                                    <p>
+                                        Namaste. I can help you
+                                        understand medical information,
+                                        prescriptions, symptoms,
+                                        healthcare services and
+                                        emergency options.
+                                    </p>
+
+                                    <small>
+                                        I am an AI assistant —
+                                        not a replacement for a doctor.
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="chat-input-area">
+
+                            <button
+                                id="voice-input"
+                                class="chat-tool"
+                                type="button"
+                                title="Voice input"
+                            >
+                                🎙
+                            </button>
+
+                            <textarea
+                                id="chat-input"
+                                placeholder="Ask a medical question..."
+                                rows="1"
+                            ></textarea>
+
+                            <button
+                                id="send-chat"
+                                class="send-button"
+                                type="button"
+                            >
+                                ↑
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <aside class="ai-side-panel">
+
+                        <div class="side-card">
+
+                            <small>
+                                AI BEHAVIOUR
+                            </small>
+
+                            <h3>
+                                Source-aware by design.
+                            </h3>
+
+                            <p>
+                                MediAlert should prefer retrieved
+                                knowledge over unsupported claims.
+                            </p>
+
+                        </div>
+
+
+                        <div class="side-card warning-card">
+
+                            <small>
+                                SAFETY
+                            </small>
+
+                            <h3>
+                                Don't blindly trust AI.
+                            </h3>
+
+                            <p>
+                                If information is insufficient,
+                                MediAlert should say so instead
+                                of pretending to know.
+                            </p>
+
+                        </div>
+
+
+                        <div class="side-card">
+
+                            <small>
+                                LANGUAGE
+                            </small>
+
+                            <h3>
+                                Hindi • English • Hinglish
+                            </h3>
+
+                            <p>
+                                Ask naturally in the language
+                                you're comfortable with.
+                            </p>
+
+                        </div>
+
+                    </aside>
+
+                </div>
+
+            </section>
+            <!-- =================================================
+     EMERGENCY SOS
+================================================= -->
+
+<section
+    id="view-emergency"
+    class="page-view"
+>
+
+    <div class="emergency-hero">
+
+        <div>
+
+            <div class="eyebrow">
+                EMERGENCY RESPONSE
+            </div>
+
+            <h1>
+                Need help
+                <span>right now?</span>
+            </h1>
+
+            <p>
+                MediAlert can use your location to help identify
+                nearby suitable hospitals and organize an
+                emergency response path.
+            </p>
+
+        </div>
+
+        <div class="emergency-icon">
+            ⚠
+        </div>
+
+    </div>
+
+
+    <div class="emergency-grid">
+
+        <div class="emergency-action-card">
+
+            <div class="big-emergency-icon">
+                SOS
+            </div>
+
+            <h2>
+                Emergency SOS
+            </h2>
+
+            <p>
+                Share your current location and start the
+                emergency assistance workflow.
+            </p>
+
+            <button
+                id="sos-button"
+                class="primary-button danger full"
+                type="button"
+            >
+                Activate Emergency SOS →
+            </button>
+
+            <div
+                id="sos-result"
+                class="result-box"
+            ></div>
+
+        </div>
+
+
+        <div class="emergency-info">
+
+            <div class="info-card">
+
+                <span>01</span>
+
+                <h3>
+                    Share location
+                </h3>
+
+                <p>
+                    Detect your browser location when
+                    permission is granted.
+                </p>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <span>02</span>
+
+                <h3>
+                    Find suitable hospital
+                </h3>
+
+                <p>
+                    Match emergency needs with available
+                    Lucknow hospital data.
+                </p>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <span>03</span>
+
+                <h3>
+                    Emergency contacts
+                </h3>
+
+                <p>
+                    Keep important emergency numbers
+                    accessible during urgent situations.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="emergency-note">
+
+        <strong>
+            ⚠ Emergency notice
+        </strong>
+
+        <p>
+            MediAlert is an assistance platform. In a
+            life-threatening emergency, contact emergency
+            services or seek immediate professional medical care.
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     SMART HOSPITALS
+================================================= -->
+
+<section
+    id="view-hospitals"
+    class="page-view"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="eyebrow">
+                LUCKNOW HEALTH NETWORK
+            </div>
+
+            <h1>
+                Find the right
+                <span>hospital.</span>
+            </h1>
+
+            <p>
+                Search hospitals and healthcare facilities
+                available in the MediAlert Lucknow dataset.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="hospital-control-panel">
+
+        <div class="search-box-large">
+
+            <span>
+                ⌕
+            </span>
+
+            <input
+                id="hospital-search"
+                type="search"
+                placeholder="Search hospital, area, specialty or facility..."
+            >
+
+        </div>
+
+
+        <select id="hospital-type">
+
+            <option value="">
+                All facilities
+            </option>
+
+            <option value="government">
+                Government Hospital
+            </option>
+
+            <option value="private">
+                Private Hospital
+            </option>
+
+            <option value="emergency">
+                Emergency Care
+            </option>
+
+            <option value="trauma">
+                Trauma Care
+            </option>
+
+            <option value="multispeciality">
+                Multispeciality
+            </option>
+
+        </select>
+
+
+        <button
+            id="hospital-search-button"
+            class="primary-button"
+            type="button"
+        >
+            Search →
+        </button>
+
+    </div>
+
+
+    <div class="hospital-intelligence">
+
+        <div>
+
+            <small>
+                SMART MATCHING
+            </small>
+
+            <h2>
+                Don't just find a hospital.
+                <span>Find a suitable one.</span>
+            </h2>
+
+            <p>
+                MediAlert can use hospital information,
+                location and service data to help narrow
+                down suitable options.
+            </p>
+
+        </div>
+
+        <div class="hospital-stats">
+
+            <div>
+                <strong id="hospital-count">
+                    —
+                </strong>
+
+                <span>
+                    Hospitals indexed
+                </span>
+            </div>
+
+            <div>
+                <strong>
+                    LKO
+                </strong>
+
+                <span>
+                    Lucknow coverage
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="hospital-results"
+        class="result-grid hospital-results"
+    >
+
+        <div class="empty-state">
+
+            <span>
+                🏥
+            </span>
+
+            <h3>
+                Search hospitals
+            </h3>
+
+            <p>
+                Search by hospital name, locality,
+                facility or medical service.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     BLOOD SUPPORT
+================================================= -->
+
+<section
+    id="view-blood"
+    class="page-view"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="eyebrow">
+                BLOOD SUPPORT NETWORK
+            </div>
+
+            <h1>
+                Blood support
+                <span>when every minute matters.</span>
+            </h1>
+
+            <p>
+                Register as a donor, request blood, and
+                help create a local emergency matching network.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="blood-intro">
+
+        <div class="blood-intro-icon">
+            🩸
+        </div>
+
+        <div>
+
+            <small>
+                HOW IT WORKS
+            </small>
+
+            <h2>
+                Connect people who can give
+                <span>with people who need.</span>
+            </h2>
+
+            <p>
+                MediAlert currently provides registration
+                and request workflows. Actual donor matching
+                depends on available registered data.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="blood-tabs">
+
+        <button
+            class="blood-tab active"
+            data-blood-tab="donor"
+            type="button"
+        >
+            🩸 Register as Donor
+        </button>
+
+        <button
+            class="blood-tab"
+            data-blood-tab="request"
+            type="button"
+        >
+            🚨 Request Blood
+        </button>
+
+    </div>
+
+
+    <!-- DONOR -->
+
+    <div
+        id="blood-donor-panel"
+        class="blood-panel active"
+    >
+
+        <div class="blood-form-card">
+
+            <div class="form-card-header">
+
+                <small>
+                    DONOR REGISTRATION
+                </small>
+
+                <h2>
+                    Become a registered donor
+                </h2>
+
+                <p>
+                    Your information can be used for
+                    emergency blood-support matching.
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <label>
+                    Full name
+
+                    <input
+                        id="donor-name"
+                        type="text"
+                        placeholder="Enter full name"
+                    >
+                </label>
+
+
+                <label>
+                    Blood group
+
+                    <select id="donor-blood">
+
+                        <option value="">
+                            Select blood group
+                        </option>
+
+                        <option>A+</option>
+                        <option>A-</option>
+                        <option>B+</option>
+                        <option>B-</option>
+                        <option>AB+</option>
+                        <option>AB-</option>
+                        <option>O+</option>
+                        <option>O-</option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+                    Phone number
+
+                    <input
+                        id="donor-phone"
+                        type="tel"
+                        placeholder="10-digit mobile number"
+                    >
+                </label>
+
+
+                <label>
+                    City / Area
+
+                    <input
+                        id="donor-location"
+                        type="text"
+                        value="Lucknow"
+                        placeholder="Your location"
+                    >
+                </label>
+
+            </div>
+
+
+            <label class="checkbox-row">
+
+                <input
+                    id="donor-consent"
+                    type="checkbox"
+                >
+
+                <span>
+                    I agree to be contacted for legitimate
+                    blood-support requests.
+                </span>
+
+            </label>
+
+
+            <button
+                id="register-donor"
+                class="primary-button full"
+                type="button"
+            >
+                Register as Donor →
+            </button>
+
+
+            <div
+                id="donor-result"
+                class="form-result"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BLOOD REQUEST -->
+
+    <div
+        id="blood-request-panel"
+        class="blood-panel"
+    >
+
+        <div class="blood-form-card request-card">
+
+            <div class="form-card-header">
+
+                <small>
+                    EMERGENCY BLOOD REQUEST
+                </small>
+
+                <h2>
+                    Create a blood requirement
+                </h2>
+
+                <p>
+                    Provide accurate information so
+                    registered donors can potentially be matched.
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <label>
+                    Patient / requester name
+
+                    <input
+                        id="request-name"
+                        type="text"
+                        placeholder="Enter name"
+                    >
+                </label>
+
+
+                <label>
+                    Required blood group
+
+                    <select id="request-blood">
+
+                        <option value="">
+                            Select blood group
+                        </option>
+
+                        <option>A+</option>
+                        <option>A-</option>
+                        <option>B+</option>
+                        <option>B-</option>
+                        <option>AB+</option>
+                        <option>AB-</option>
+                        <option>O+</option>
+                        <option>O-</option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+                    Hospital
+
+                    <input
+                        id="request-hospital"
+                        type="text"
+                        placeholder="Hospital name"
+                    >
+                </label>
+
+
+                <label>
+                    Required units
+
+                    <input
+                        id="request-units"
+                        type="number"
+                        min="1"
+                        placeholder="Example: 2"
+                    >
+                </label>
+
+            </div>
+
+
+            <label>
+                Contact number
+
+                <input
+                    id="request-phone"
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                >
+            </label>
+
+
+            <button
+                id="request-blood-button"
+                class="primary-button danger full"
+                type="button"
+            >
+                Create Blood Request →
+            </button>
+
+
+            <div
+                id="blood-result"
+                class="form-result"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="medical-warning">
+
+        <strong>
+            🩸 Privacy & safety
+        </strong>
+
+        <p>
+            Only provide information necessary for the
+            blood-support workflow. MediAlert does not
+            guarantee donor availability.
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     MEDICAL OCR
+================================================= -->
+
+<section
+    id="view-ocr"
+    class="page-view"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="eyebrow">
+                DOCUMENT INTELLIGENCE
+            </div>
+
+            <h1>
+                Understand your
+                <span>medical documents.</span>
+            </h1>
+
+            <p>
+                Upload a medical document or use your camera
+                to capture it. MediAlert can extract readable
+                information and send it for analysis.
+            </p>
+
+        </div>
+
+        <div class="ai-status">
+            <span class="status-dot"></span>
+            OCR READY
+        </div>
+
+    </div>
+
+
+    <div class="ocr-layout">
+
+
+        <!-- LEFT CONTROL -->
+
+        <div class="ocr-control-card">
+
+            <div class="ocr-card-header">
+
+                <small>
+                    SCAN STATION
+                </small>
+
+                <h2>
+                    Scan a document
+                </h2>
+
+            </div>
+
+
+            <!-- CAMERA -->
+
+            <div
+                id="camera-box"
+                class="camera-box hidden"
+            >
+
+                <video
+                    id="ocr-camera"
+                    autoplay
+                    playsinline
+                ></video>
+
+                <div class="camera-frame"></div>
+
+            </div>
+
+
+            <div
+                id="ocr-dropzone"
+                class="upload-card"
+            >
+
+                <div class="upload-icon">
+                    ▣
+                </div>
+
+                <h3>
+                    Drop your document here
+                </h3>
+
+                <p>
+                    JPG • JPEG • PNG • WEBP • BMP • TIFF
+                </p>
+
+
+                <input
+                    id="ocr-file"
+                    type="file"
+                    accept="image/*"
+                    hidden
+                >
+
+
+                <button
+                    id="ocr-choose"
+                    class="secondary-button"
+                    type="button"
+                >
+                    📁 Choose Document
+                </button>
+
+            </div>
+
+
+            <div class="ocr-actions">
+
+                <button
+                    id="ocr-camera-button"
+                    class="camera-button"
+                    type="button"
+                >
+                    📷 Use Camera
+                </button>
+
+                <button
+                    id="ocr-capture"
+                    class="camera-button hidden"
+                    type="button"
+                >
+                    ◉ Capture
+                </button>
+
+                <button
+                    id="ocr-stop-camera"
+                    class="secondary-button hidden"
+                    type="button"
+                >
+                    Stop Camera
+                </button>
+
+            </div>
+
+
+            <div class="ocr-options">
+
+                <label>
+
+                    Check against
+
+                    <select id="ocr-check-against">
+
+                        <option value="auto">
+                            Auto Detect
+                        </option>
+
+                        <option value="prescription">
+                            Prescription
+                        </option>
+
+                        <option value="lab">
+                            Lab Report
+                        </option>
+
+                        <option value="medical">
+                            Medical Document
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    Document language
+
+                    <select id="ocr-language">
+
+                        <option value="english">
+                            English
+                        </option>
+
+                        <option value="hindi">
+                            Hindi
+                        </option>
+
+                        <option value="hinglish">
+                            Hindi / Hinglish
+                        </option>
+
+                    </select>
+
+                </label>
+
+            </div>
+
+
+            <button
+                id="ocr-analyse"
+                class="primary-button full"
+                type="button"
+            >
+                ✦ Scan & Analyse Document
+            </button>
+
+        </div>
+
+
+
+        <!-- RIGHT ANALYSIS -->
+
+        <div class="analysis-card">
+
+            <div class="analysis-header">
+
+                <div>
+
+                    <small>
+                        AI DOCUMENT ANALYSIS
+                    </small>
+
+                    <h3>
+                        Analysis result
+                    </h3>
+
+                </div>
+
+                <span class="analysis-badge">
+                    AI
+                </span>
+
+            </div>
+
+
+            <div
+                id="ocr-preview"
+                class="ocr-preview hidden"
+            >
+
+                <img
+                    id="ocr-preview-image"
+                    src=""
+                    alt="Selected medical document"
+                >
+
+            </div>
+
+
+            <div
+                id="ocr-result"
+                class="analysis-content"
+            >
+
+                <div class="empty-state">
+
+                    <span>
+                        ▣
+                    </span>
+
+                    <h3>
+                        Ready to scan
+                    </h3>
+
+                    <p>
+                        Upload or capture a medical
+                        document to begin.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="medical-warning">
+
+        <strong>
+            ⚠ Medical information only
+        </strong>
+
+        <p>
+            OCR and AI analysis can contain extraction or
+            interpretation errors. Always verify important
+            information against the original document and
+            consult a qualified healthcare professional.
+        </p>
+
+    </div>
+
+</section>
+
+<!-- =================================================
+     PRESCRIPTION READER
+================================================= -->
+
+<section
+    id="view-prescription"
+    class="page-view"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="eyebrow">
+                PRESCRIPTION INTELLIGENCE
+            </div>
+
+            <h1>
+                Make prescriptions
+                <span>easier to understand.</span>
+            </h1>
+
+            <p>
+                Upload a prescription and let MediAlert
+                extract medicines, dosage information and
+                important instructions.
+            </p>
+
+        </div>
+
+        <div class="ai-status">
+            <span class="status-dot"></span>
+            PRESCRIPTION AI
+        </div>
+
+    </div>
+
+
+    <div class="prescription-grid">
+
+        <div class="prescription-upload-card">
+
+            <small>
+                PRESCRIPTION INPUT
+            </small>
+
+            <h2>
+                Upload prescription
+            </h2>
+
+            <p>
+                Use a clear photo or scanned prescription
+                for better extraction.
+            </p>
+
+
+            <input
+                id="prescription-file"
+                type="file"
+                accept="image/*,.pdf"
+                hidden
+            >
+
+
+            <div
+                id="prescription-dropzone"
+                class="upload-card"
+            >
+
+                <div class="upload-icon">
+                    Rx
+                </div>
+
+                <h3>
+                    Choose prescription
+                </h3>
+
+                <p>
+                    JPG • PNG • WEBP • PDF
+                </p>
+
+                <button
+                    id="prescription-choose"
+                    class="secondary-button"
+                    type="button"
+                >
+                    📁 Choose File
+                </button>
+
+            </div>
+
+
+            <button
+                id="prescription-analyse"
+                class="primary-button full"
+                type="button"
+            >
+                ✦ Read Prescription
+            </button>
+
+
+            <div
+                id="prescription-status"
+                class="form-result"
+            ></div>
+
+        </div>
+
+
+        <div class="prescription-result-card">
+
+            <div class="analysis-header">
+
+                <div>
+
+                    <small>
+                        EXTRACTED INFORMATION
+                    </small>
+
+                    <h3>
+                        Prescription summary
+                    </h3>
+
+                </div>
+
+                <span class="analysis-badge">
+                    AI
+                </span>
+
+            </div>
+
+
+            <div
+                id="prescription-result"
+                class="prescription-result"
+            >
+
+                <div class="empty-state">
+
+                    <span>
+                        Rx
+                    </span>
+
+                    <h3>
+                        Nothing analysed yet
+                    </h3>
+
+                    <p>
+                        Upload a prescription to see
+                        extracted information here.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="medical-warning">
+
+        <strong>
+            ⚠ Important
+        </strong>
+
+        <p>
+            Never change medicine dosage, stop medication,
+            or start a medicine only because of an AI-generated
+            interpretation. Confirm with your doctor or pharmacist.
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     HEALTH SCHEMES
+================================================= -->
+
+<section
+    id="view-schemes"
+    class="page-view"
+>
+
+    <div class="schemes-hero">
+
+        <div>
+
+            <div class="eyebrow">
+                GOVERNMENT HEALTH BENEFITS
+            </div>
+
+            <h1>
+                Find schemes
+                <span>you may qualify for.</span>
+            </h1>
+
+            <p>
+                Tell MediAlert a few details about yourself
+                and discover relevant healthcare schemes
+                from the available knowledge base.
+            </p>
+
+        </div>
+
+        <div class="scheme-hero-icon">
+            🏛
+        </div>
+
+    </div>
+
+
+    <div class="scheme-layout">
+
+        <div class="scheme-profile-card">
+
+            <div class="form-card-header">
+
+                <small>
+                    YOUR PROFILE
+                </small>
+
+                <h2>
+                    Tell us about yourself
+                </h2>
+
+            </div>
+
+
+            <div class="scheme-form">
+
+                <label>
+                    Age
+
+                    <input
+                        id="scheme-age"
+                        type="number"
+                        min="0"
+                        max="120"
+                        placeholder="Example: 45"
+                    >
+                </label>
+
+
+                <label>
+                    Occupation
+
+                    <select id="scheme-occupation">
+
+                        <option value="">
+                            Select occupation
+                        </option>
+
+                        <option value="farmer">
+                            Farmer / Kisan
+                        </option>
+
+                        <option value="student">
+                            Student
+                        </option>
+
+                        <option value="worker">
+                            Worker
+                        </option>
+
+                        <option value="self-employed">
+                            Self employed
+                        </option>
+
+                        <option value="government">
+                            Government employee
+                        </option>
+
+                        <option value="private">
+                            Private employee
+                        </option>
+
+                        <option value="unemployed">
+                            Unemployed
+                        </option>
+
+                        <option value="senior">
+                            Senior citizen
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+                    Social category
+
+                    <select id="scheme-category">
+
+                        <option value="general">
+                            General
+                        </option>
+
+                        <option value="obc">
+                            OBC
+                        </option>
+
+                        <option value="sc">
+                            SC
+                        </option>
+
+                        <option value="st">
+                            ST
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+                    Annual family income
+
+                    <input
+                        id="scheme-income"
+                        type="number"
+                        min="0"
+                        placeholder="Example: 120000"
+                    >
+                </label>
+
+
+                <label>
+                    Gender
+
+                    <select id="scheme-gender">
+
+                        <option value="">
+                            Select
+                        </option>
+
+                        <option value="male">
+                            Male
+                        </option>
+
+                        <option value="female">
+                            Female
+                        </option>
+
+                        <option value="other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <button
+                    id="find-schemes"
+                    class="primary-button full"
+                    type="button"
+                >
+                    Find My Schemes →
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="scheme-results-card">
+
+            <div class="analysis-header">
+
+                <div>
+
+                    <small>
+                        PERSONALIZED RESULTS
+                    </small>
+
+                    <h3>
+                        Recommended schemes
+                    </h3>
+
+                </div>
+
+                <span class="analysis-badge">
+                    MATCH
+                </span>
+
+            </div>
+
+
+            <div
+                id="scheme-results"
+                class="scheme-results"
+            >
+
+                <div class="empty-state">
+
+                    <span>
+                        🏛
+                    </span>
+
+                    <h3>
+                        Your matches will appear here
+                    </h3>
+
+                    <p>
+                        Complete your profile and MediAlert
+                        will evaluate available schemes.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="scheme-note">
+
+        <strong>
+            Information check
+        </strong>
+
+        <p>
+            Eligibility rules can change. Always verify
+            the final eligibility and application requirements
+            through the official government authority.
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     GRIEVANCE
+================================================= -->
+
+<section
+    id="view-grievance"
+    class="page-view"
+>
+
+    <div class="grievance-hero">
+
+        <div>
+
+            <div class="eyebrow">
+                CITIZEN RESOLUTION DESK
+            </div>
+
+            <h1>
+                Don't know where to
+                <span>raise your complaint?</span>
+            </h1>
+
+            <p>
+                Choose your issue, describe what happened,
+                and MediAlert can help structure the complaint
+                workflow.
+            </p>
+
+        </div>
+
+        <div class="grievance-icon">
+            ⚖
+        </div>
+
+    </div>
+
+
+    <div class="grievance-layout">
+
+        <div class="grievance-types">
+
+            <div class="form-card-header">
+
+                <small>
+                    START HERE
+                </small>
+
+                <h2>
+                    What went wrong?
+                </h2>
+
+            </div>
+
+
+            <button
+                class="grievance-type active"
+                data-grievance="ration"
+                type="button"
+            >
+
+                <span>
+                    01
+                </span>
+
+                <div>
+                    <strong>
+                        Ration Denied
+                    </strong>
+
+                    <small>
+                        Ration refused, reduced or unavailable
+                    </small>
+                </div>
+
+                <b>→</b>
+
+            </button>
+
+
+            <button
+                class="grievance-type"
+                data-grievance="scheme"
+                type="button"
+            >
+
+                <span>
+                    02
+                </span>
+
+                <div>
+                    <strong>
+                        Scheme Failed
+                    </strong>
+
+                    <small>
+                        Eligible benefit has not been received
+                    </small>
+                </div>
+
+                <b>→</b>
+
+            </button>
+
+
+            <button
+                class="grievance-type"
+                data-grievance="corruption"
+                type="button"
+            >
+
+                <span>
+                    03
+                </span>
+
+                <div>
+                    <strong>
+                        Official Misconduct
+                    </strong>
+
+                    <small>
+                        Corruption or misconduct concern
+                    </small>
+                </div>
+
+                <b>→</b>
+
+            </button>
+
+
+            <button
+                class="grievance-type"
+                data-grievance="pension"
+                type="button"
+            >
+
+                <span>
+                    04
+                </span>
+
+                <div>
+                    <strong>
+                        Pension Problem
+                    </strong>
+
+                    <small>
+                        Pension delayed, stopped or not credited
+                    </small>
+                </div>
+
+                <b>→</b>
+
+            </button>
+
+        </div>
+
+
+        <div class="complaint-card">
+
+            <div class="form-card-header">
+
+                <small>
+                    COMPLAINT BUILDER
+                </small>
+
+                <h2>
+                    Turn your issue into a formal complaint.
+                </h2>
+
+                <p>
+                    Provide the essential details and MediAlert
+                    will prepare a structured draft.
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <label>
+                    Full name
+
+                    <input
+                        id="complaint-name"
+                        type="text"
+                        placeholder="e.g. Ram Kumar"
+                    >
+                </label>
+
+
+                <label>
+                    District
+
+                    <input
+                        id="complaint-district"
+                        type="text"
+                        value="Lucknow"
+                        placeholder="District"
+                    >
+                </label>
+
+
+                <label>
+                    Block / Tehsil
+
+                    <input
+                        id="complaint-block"
+                        type="text"
+                        placeholder="e.g. Malihabad"
+                    >
+                </label>
+
+
+                <label>
+                    Village / Ward
+
+                    <input
+                        id="complaint-village"
+                        type="text"
+                        placeholder="e.g. Rampur"
+                    >
+                </label>
+
+            </div>
+
+
+            <label>
+                Issue category
+
+                <select id="complaint-category">
+
+                    <option value="ration">
+                        Ration Denied
+                    </option>
+
+                    <option value="scheme">
+                        Scheme Failed
+                    </option>
+
+                    <option value="corruption">
+                        Official Misconduct
+                    </option>
+
+                    <option value="pension">
+                        Pension Problem
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label>
+                Description of issue
+
+                <textarea
+                    id="complaint-description"
+                    rows="6"
+                    placeholder="Explain what happened, when it happened, and which office or person was involved..."
+                ></textarea>
+
+            </label>
+
+
+            <div class="form-grid">
+
+                <label>
+                    Date of incident
+
+                    <input
+                        id="complaint-date"
+                        type="date"
+                    >
+                </label>
+
+
+                <label>
+                    Previous complaint number
+
+                    <input
+                        id="complaint-number"
+                        type="text"
+                        placeholder="If already reported"
+                    >
+                </label>
+
+            </div>
+
+
+            <button
+                id="generate-complaint"
+                class="primary-button danger full"
+                type="button"
+            >
+                Generate Complaint Draft →
+            </button>
+
+
+            <div
+                id="complaint-result"
+                class="complaint-result"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <div class="grievance-escalation">
+
+        <div class="escalation-header">
+
+            <small>
+                GUIDED PROCESS
+            </small>
+
+            <h2>
+                Follow your escalation path.
+            </h2>
+
+        </div>
+
+
+        <div class="escalation-steps">
+
+            <div>
+                <strong>01</strong>
+                <span>Collect evidence</span>
+            </div>
+
+            <div>
+                <strong>02</strong>
+                <span>Contact relevant authority</span>
+            </div>
+
+            <div>
+                <strong>03</strong>
+                <span>Submit complaint</span>
+            </div>
+
+            <div>
+                <strong>04</strong>
+                <span>Track response</span>
+            </div>
+
+            <div>
+                <strong>05</strong>
+                <span>Escalate if unresolved</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     NEARBY SERVICES
+================================================= -->
+
+<section
+    id="view-nearby"
+    class="page-view"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="eyebrow">
+                LOCATION SERVICES
+            </div>
+
+            <h1>
+                Find help
+                <span>near you.</span>
+            </h1>
+
+            <p>
+                Discover nearby healthcare services using
+                your location or a Lucknow-area search.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="nearby-search-panel">
+
+        <div class="search-box-large">
+
+            <span>
+                ⌖
+            </span>
+
+            <input
+                id="nearby-search"
+                type="text"
+                value="Lucknow"
+                placeholder="Search area or service..."
+            >
+
+        </div>
+
+
+        <select id="nearby-type">
+
+            <option value="hospital">
+                Hospitals
+            </option>
+
+            <option value="pharmacy">
+                Pharmacies
+            </option>
+
+            <option value="clinic">
+                Clinics
+            </option>
+
+            <option value="blood">
+                Blood Banks
+            </option>
+
+            <option value="ambulance">
+                Emergency Services
+            </option>
+
+        </select>
+
+
+        <button
+            id="nearby-search-button"
+            class="primary-button"
+            type="button"
+        >
+            Search →
+        </button>
+
+
+        <button
+            id="nearby-location-button"
+            class="secondary-button"
+            type="button"
+        >
+            ⌖ Use My Location
+        </button>
+
+    </div>
+
+
+    <div class="nearby-map">
+
+        <div class="map-placeholder">
+
+            <div class="map-grid"></div>
+
+            <div class="map-center">
+
+                <div class="location-pulse"></div>
+
+                <span>
+                    You are here
+                </span>
+
+            </div>
+
+
+            <div class="map-pin pin-one">●</div>
+            <div class="map-pin pin-two">●</div>
+            <div class="map-pin pin-three">●</div>
+            <div class="map-pin pin-four">●</div>
+            <div class="map-pin pin-five">●</div>
+
+            <div class="map-overlay">
+
+                <small>
+                    MEDIALERT LOCATION SERVICES
+                </small>
+
+                <strong>
+                    Nearby healthcare network
+                </strong>
+
+                <span>
+                    Lucknow • Live search
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="nearby-results-header">
+
+        <div>
+
+            <small>
+                NEARBY SERVICES
+            </small>
+
+            <h2>
+                Search results
+            </h2>
+
+        </div>
+
+        <span>
+            Live
+        </span>
+
+    </div>
+
+
+    <div
+        id="nearby-results"
+        class="result-grid"
+    >
+
+        <div class="empty-state">
+
+            <span>
+                ⌖
+            </span>
+
+            <h3>
+                Search nearby services
+            </h3>
+
+            <p>
+                Choose a service type and search an area
+                to see available results.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     ACCOUNT
+================================================= -->
+
+<section
+    id="view-account"
+    class="page-view"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="eyebrow">
+                YOUR MEDIALERT ACCOUNT
+            </div>
+
+            <h1>
+                Your healthcare
+                <span>control center.</span>
+            </h1>
+
+            <p>
+                Manage your profile, preferences and
+                emergency information.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="account-grid">
+
+        <div class="account-profile-card">
+
+            <div class="account-avatar">
+                U
+            </div>
+
+            <h2 id="account-name">
+                MediAlert User
+            </h2>
+
+            <p id="account-email">
+                —
+            </p>
+
+            <span class="account-badge">
+                USER
+            </span>
+
+        </div>
+
+
+        <div class="account-settings-card">
+
+            <div class="settings-row">
+
+                <div>
+
+                    <small>
+                        APPEARANCE
+                    </small>
+
+                    <strong>
+                        Interface theme
+                    </strong>
+
+                    <span>
+                        Switch between light and dark mode.
+                    </span>
+
+                </div>
+
+                <button
+                    id="account-theme-toggle"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Toggle Theme
+                </button>
+
+            </div>
+
+
+            <div class="settings-row">
+
+                <div>
+
+                    <small>
+                        LOCATION
+                    </small>
+
+                    <strong>
+                        Current service area
+                    </strong>
+
+                    <span>
+                        Lucknow, Uttar Pradesh
+                    </span>
+
+                </div>
+
+                <span class="settings-status">
+                    ● ACTIVE
+                </span>
+
+            </div>
+
+
+            <div class="settings-row">
+
+                <div>
+
+                    <small>
+                        MEDICAL SAFETY
+                    </small>
+
+                    <strong>
+                        AI assistance
+                    </strong>
+
+                    <span>
+                        AI-generated information should
+                        be verified by healthcare professionals.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+    </div>
+    <!-- END page-container -->
+
+</main>
+<!-- END main-area -->
+
+</div>
+<!-- END app-shell -->
+
+
+<!-- =================================================
+     GLOBAL TOAST
+================================================= -->
+
+<div
+    id="toast"
+    class="toast"
+></div>
+
+
+<!-- =================================================
+     JAVASCRIPT
+================================================= -->
+
+<script
+    src="{{ url_for('static', filename='js/app.js') }}"
+></script>
+
+</body>
+</html>

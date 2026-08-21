@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# RAG Data
+data/
+chroma_db/
+
+# Database
+*.db
+chat_history.db
+
+# Zip files
+*.zip
+
+# VS Code
+.vscode/
+.env
+*.env
+archive/

@@ -1,0 +1,108 @@
+# =========================================================
+# MEDIALERT - FINAL REQUIREMENTS
+# Flask + HTML/CSS/JS + RAG + Groq + OCR + Voice
+# Also keeps compatibility with old Streamlit backup
+# =========================================================
+
+
+# -------------------------
+# WEB / BACKEND
+# -------------------------
+Flask
+Flask-Cors
+Werkzeug
+Jinja2
+itsdangerous
+click
+
+
+# -------------------------
+# OLD STREAMLIT BACKUP
+# -------------------------
+streamlit
+audio-recorder-streamlit
+
+
+# -------------------------
+# AI / LLM
+# -------------------------
+groq
+google-generativeai
+
+
+# -------------------------
+# ENVIRONMENT / HTTP
+# -------------------------
+python-dotenv
+requests
+httpx
+
+
+# -------------------------
+# RAG / VECTOR DATABASE
+# -------------------------
+chromadb==1.5.9
+sentence-transformers
+huggingface_hub
+
+
+# -------------------------
+# ML / DEEP LEARNING
+# -------------------------
+torch
+torchvision
+transformers
+numpy
+scipy
+scikit-learn
+
+
+# -------------------------
+# PDF / DOCUMENT PROCESSING
+# -------------------------
+pypdf
+PyMuPDF
+
+
+# -------------------------
+# IMAGE / OCR
+# -------------------------
+Pillow
+opencv-python
+pytesseract
+
+
+# -------------------------
+# AUDIO / SPEECH
+# -------------------------
+SpeechRecognition
+pydub
+gTTS
+
+
+# -------------------------
+# DATA PROCESSING
+# -------------------------
+pandas
+
+
+# -------------------------
+# LOCATION / MAP SERVICES
+# -------------------------
+geopy
+
+
+# -------------------------
+# DATABASE
+# -------------------------
+SQLAlchemy
+
+
+# -------------------------
+# UTILITIES
+# -------------------------
+python-dateutil
+PyYAML
+tqdm
+tenacity
+typing-extensions
