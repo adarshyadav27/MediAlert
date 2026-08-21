@@ -7,12 +7,17 @@ from utils import (
     filter_donors,
     filter_hospitals,
     filter_schemes,
+    init_rag_vectorstore,
     load_data,
     process_prescription_ocr,
-    rag_chat_query,
+    query_rag_system,
+    transcribe_speech_audio,
 )
 
 app = Flask(__name__, template_folder="../frontend/templates", static_folder="../frontend/static")
+
+# Explicitly initialize ChromaDB RAG Vectorstore on Flask startup
+init_rag_vectorstore()
 
 
 @app.get("/")
@@ -99,17 +104,25 @@ def chat():
     if not user_message:
         return jsonify({"error": "Message payload cannot be empty."}), 400
 
-    hospitals = load_data("hospitals_lucknow.csv")
-    schemes = load_data("schemes_up.csv")
-    donors = load_data("donors_lucknow.csv")
-
-    response = rag_chat_query(user_message, hospitals, schemes, donors)
+    response = query_rag_system(user_message)
     return jsonify(response)
+
+
+@app.post("/api/stt")
+def stt():
+    file_name = None
+    if "file" in request.files:
+        file_obj = request.files["file"]
+        file_name = file_obj.filename
+    result = transcribe_speech_audio(file_name)
+    return jsonify(result)
 
 
 @app.post("/api/ocr")
 def ocr():
+    file_obj = None
     file_name = None
+
     if "file" in request.files:
         file_obj = request.files["file"]
         file_name = file_obj.filename
@@ -117,7 +130,7 @@ def ocr():
         payload = request.get_json(silent=True) or {}
         file_name = payload.get("file_name")
 
-    result = process_prescription_ocr(file_name)
+    result = process_prescription_ocr(file_obj=file_obj, file_name=file_name)
     return jsonify(result)
 
 

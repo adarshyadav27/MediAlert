@@ -1,0 +1,19 @@
+{
+  "keywords": [
+    "prescription", "rx", "dr.", "doctor", "tablet", "tab", "capsule", "cap",
+    "syrup", "mg", "ml", "dosage", "duration", "paracetamol", "amoxicillin",
+    "pantoprazole", "azithromycin", "metformin", "atorvastatin", "amlodipine",
+    "ibuprofen", "ciprofloxacin", "cetirizine", "omeprazole", "dextromethorphan",
+    "clinic", "diagnostics", "hospital", "patient", "reg_no", "reg. no", "dr",
+    "medical", "pharmacy", "medicine", "substitute", "take", "daily", "after meals",
+    "before breakfast", "bedtime", "1-0-1", "1-1-1", "1-0-0", "0-0-1", "m.d.", "m.b.b.s."
+  ],
+  "sample_valid_files": [
+    "sample_prescription.jpg",
+    "sample_prescription.png",
+    "prescription.jpg",
+    "prescription.png",
+    "medical_report.pdf",
+    "rx_document.jpg"
+  ]
+}

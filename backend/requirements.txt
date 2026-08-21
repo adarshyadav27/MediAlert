@@ -1,2 +1,8 @@
-Flask==3.1.0
-pandas==2.2.3
+flask
+pandas
+google-generativeai
+langchain
+langchain-community
+langchain-google-genai
+chromadb
+sentence-transformers
