@@ -1,4 +1,4 @@
-// Medical Chatbot — MediAlert Multi-Modal Interactive Assistant Script
+// MedAlert Lucknow — Emergency Care, Medical Consultation, Hospital Finder, Donor Registry & UP Schemes
 
 const api = (path, options) => fetch(path, options).then((response) => {
   if (!response.ok) throw new Error('Network request failed');
@@ -15,6 +15,43 @@ function escapeHtml(value) {
     '"': '&quot;'
   }[char]));
 }
+
+// Markdown Formatter with link support for consultation responses
+function parseMarkdown(text) {
+  if (!text) return '';
+  let formatted = escapeHtml(text);
+
+  // Markdown Links: [label](url)
+  formatted = formatted.replace(/\[(.*?)\]\((.*?)\)/g, (match, label, url) => {
+    const isTel = url.startsWith('tel:');
+    const isExternal = url.startsWith('http');
+    const bgClass = isTel ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100';
+    return `<a href="${url}" ${isExternal ? 'target="_blank"' : ''} class="inline-flex items-center gap-1 font-bold text-xs px-2 py-0.5 rounded-lg border ${bgClass} transition">${label}</a>`;
+  });
+
+  // Headers
+  formatted = formatted.replace(/^### (.*$)/gim, '<h3 class="font-bold text-sm text-slate-900 mt-2.5 mb-1">$1</h3>');
+  formatted = formatted.replace(/^## (.*$)/gim, '<h2 class="font-bold text-base text-slate-900 mt-3 mb-1.5">$1</h2>');
+
+  // Bold
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+  
+  // Italic
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+
+  // Bullet Lists
+  formatted = formatted.replace(/^\s*[-•]\s+(.*$)/gim, '<li class="ml-4 list-disc text-slate-700">$1</li>');
+
+  // Line breaks
+  formatted = formatted.replace(/\n/g, '<br>');
+
+  return formatted;
+}
+
+// Conversation History & Multi-modal State
+let chatHistory = [];
+let selectedImageBase64 = null;
+let selectedFileName = '';
 
 // SOS Dispatch Countdown Manager
 let sosTimer = null;
@@ -78,7 +115,6 @@ async function openCameraModal() {
     video.srcObject = cameraStream;
   } catch (err) {
     console.warn('Camera access fallback or denied:', err);
-    // Fallback: trigger file input with capture="environment"
     closeCameraModal();
     const fileInput = document.getElementById('inchat-ocr-file');
     if (fileInput) fileInput.click();
@@ -109,13 +145,34 @@ function snapPhotoFromCamera() {
   canvas.height = video.videoHeight || 480;
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  canvas.toBlob((blob) => {
-    if (blob) {
-      const file = new File([blob], 'camera_prescription_capture.jpg', { type: 'image/jpeg' });
-      closeCameraModal();
-      handleInChatOcrUpload(file);
-    }
-  }, 'image/jpeg', 0.95);
+  const base64Data = canvas.toDataURL('image/jpeg', 0.92);
+  closeCameraModal();
+  setAttachedImage(base64Data, 'camera_prescription_capture.jpg');
+}
+
+function setAttachedImage(base64Data, fileName) {
+  selectedImageBase64 = base64Data;
+  selectedFileName = fileName || 'prescription_photo.jpg';
+
+  const container = document.getElementById('attachment-preview-container');
+  const nameEl = document.getElementById('attachment-file-name');
+
+  if (container) container.classList.remove('hidden');
+  if (nameEl) nameEl.textContent = selectedFileName;
+}
+
+function clearAttachedImage() {
+  selectedImageBase64 = null;
+  selectedFileName = '';
+
+  const container = document.getElementById('attachment-preview-container');
+  if (container) container.classList.add('hidden');
+
+  const fileInput = document.getElementById('inchat-ocr-file');
+  if (fileInput) fileInput.value = '';
+
+  const sidebarInput = document.getElementById('sidebar-ocr-file');
+  if (sidebarInput) sidebarInput.value = '';
 }
 
 // Speech-to-Text Voice Input Handler
@@ -128,9 +185,8 @@ function startVoiceRecognition() {
   }
 
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    // Fallback STT simulation
     api('/api/stt', { method: 'POST' }).then(data => {
-      const text = data.transcript || 'Find beds in KGMU and Lohia Institute';
+      const text = data.transcript || 'I have a fever and common cold';
       if (chatInput) chatInput.value = text;
       sendChatMessage(null, text);
     }).finally(() => {
@@ -152,7 +208,7 @@ function startVoiceRecognition() {
     };
 
     recognition.onerror = () => {
-      const fallbackText = 'Find beds in KGMU and Lohia Institute';
+      const fallbackText = 'I have a fever and common cold';
       if (chatInput) chatInput.value = fallbackText;
       sendChatMessage(null, fallbackText);
     };
@@ -165,14 +221,14 @@ function startVoiceRecognition() {
   } catch (err) {
     console.error(err);
     if (chatInput) {
-      chatInput.value = 'Find beds in KGMU and Lohia Institute';
+      chatInput.value = 'I have a fever and common cold';
       sendChatMessage(null, chatInput.value);
     }
     if (micBtn) micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
   }
 }
 
-// Medical Chatbot RAG Handler with Typing Indicator & Bubbles
+// Medical Consultation Handler
 async function sendChatMessage(event, predefinedMsg) {
   if (event) event.preventDefault();
 
@@ -180,26 +236,40 @@ async function sendChatMessage(event, predefinedMsg) {
   const chatStream = document.querySelector('#chat-message-stream');
 
   const message = predefinedMsg || (inputEl ? inputEl.value.trim() : '');
-  if (!message) return;
-  if (inputEl && !predefinedMsg) inputEl.value = '';
+  const attachedImage = selectedImageBase64;
+  const attachedName = selectedFileName;
 
-  // Append User Bubble
+  if (!message && !attachedImage) return;
+
+  if (inputEl && !predefinedMsg) inputEl.value = '';
+  clearAttachedImage();
+
+  let imageThumbnailHtml = '';
+  if (attachedImage) {
+    imageThumbnailHtml = `
+      <div class="mb-2 overflow-hidden rounded-xl border border-white/20 max-w-[200px]">
+        <img src="${attachedImage}" alt="Attached Document" class="w-full object-cover max-h-40">
+        <div class="text-[10px] bg-slate-900/80 px-2 py-0.5 text-slate-300 truncate">📷 ${escapeHtml(attachedName)}</div>
+      </div>
+    `;
+  }
+
   if (chatStream) {
     chatStream.innerHTML += `
-      <div class="flex justify-end mb-3 chat-bubble-anim">
-        <div class="bg-red-600 text-white p-3.5 rounded-2xl rounded-tr-none text-xs font-semibold max-w-[85%] shadow-sm">
-          ${escapeHtml(message)}
+      <div class="flex justify-end mb-4 chat-bubble-anim">
+        <div class="bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-3xl rounded-tr-none text-xs sm:text-sm font-medium max-w-[85%] shadow-md">
+          ${imageThumbnailHtml}
+          <div>${escapeHtml(message || 'Analyze attached prescription image')}</div>
         </div>
       </div>
     `;
 
-    // Append Typing Indicator Bubble (Banking Chatbot Bouncing Dots)
     const tempAiId = 'ai-loading-' + Date.now();
     chatStream.innerHTML += `
-      <div id="${tempAiId}" class="flex justify-start mb-3 chat-bubble-anim">
-        <div class="bg-white border border-slate-200 text-slate-700 p-3.5 rounded-2xl rounded-tl-none text-xs max-w-[85%] space-y-2 shadow-sm">
+      <div id="${tempAiId}" class="flex justify-start mb-4 chat-bubble-anim">
+        <div class="bg-white border border-slate-200 text-slate-700 p-4 rounded-3xl rounded-tl-none text-xs max-w-[85%] space-y-2 shadow-sm">
           <div class="flex items-center gap-2 text-slate-600 font-bold">
-            <span>🤖 Medical Chatbot is typing</span>
+            <span>🩺 Medical consultant is reviewing</span>
             <div class="typing-dots">
               <span></span><span></span><span></span>
             </div>
@@ -209,32 +279,44 @@ async function sendChatMessage(event, predefinedMsg) {
     `;
     chatStream.scrollTop = chatStream.scrollHeight;
 
+    if (message) {
+      chatHistory.push({ role: 'user', content: message });
+    }
+
     try {
       const data = await api('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({
+          message: message,
+          history: chatHistory,
+          image: attachedImage
+        })
       });
 
       const loadingNode = document.getElementById(tempAiId);
       if (loadingNode) {
+        const parsedAnswerHtml = parseMarkdown(data.answer);
+
+        chatHistory.push({ role: 'assistant', content: data.answer });
+
         let contextsHtml = '';
         if (data.retrieved_context && data.retrieved_context.length > 0) {
           contextsHtml = `
             <div class="mt-3 pt-3 border-t border-slate-200/80 space-y-2">
-              <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Retrieved Context & Location Cards:</div>
+              <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Retrieved Lucknow Health Cards:</div>
               <div class="space-y-1.5">
                 ${data.retrieved_context.map(c => `
-                  <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+                  <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
                     <div class="flex items-center justify-between gap-2">
                       <span class="font-bold text-slate-900">📂 ${escapeHtml(c.title)}</span>
-                      <span class="text-[10px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">${escapeHtml(c.source)}</span>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded-full">${escapeHtml(c.source)}</span>
                     </div>
-                    <p class="text-[11px] text-slate-600">${escapeHtml(c.snippet)}</p>
+                    <p class="text-[11px] text-slate-600 leading-relaxed">${escapeHtml(c.snippet)}</p>
                     ${c.map_url || c.phone ? `
-                      <div class="pt-1 flex items-center gap-2">
-                        ${c.phone ? `<a href="tel:${escapeHtml(c.phone)}" class="py-1 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-[10px] rounded-lg border border-red-200 transition">📞 Call ${escapeHtml(c.phone)}</a>` : ''}
-                        ${c.map_url ? `<a href="${escapeHtml(c.map_url)}" target="_blank" class="py-1 px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] rounded-lg border border-blue-200 transition">🗺️ View Map Location ↗</a>` : ''}
+                      <div class="pt-1 flex flex-wrap items-center gap-2">
+                        ${c.phone ? `<a href="tel:${escapeHtml(c.phone)}" class="py-1 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-[10px] rounded-xl border border-red-200 transition">📞 Call ${escapeHtml(c.phone)}</a>` : ''}
+                        ${c.map_url ? `<a href="${escapeHtml(c.map_url)}" target="_blank" class="py-1 px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] rounded-xl border border-blue-200 transition">🗺️ View Map Location ↗</a>` : ''}
                       </div>
                     ` : ''}
                   </div>
@@ -244,20 +326,38 @@ async function sendChatMessage(event, predefinedMsg) {
           `;
         }
 
+        let followupsHtml = '';
+        if (data.suggested_followups && data.suggested_followups.length > 0) {
+          followupsHtml = `
+            <div class="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggested Follow-up Consultations:</div>
+              <div class="flex flex-wrap gap-1.5">
+                ${data.suggested_followups.map(chip => `
+                  <button type="button" data-msg="${escapeHtml(chip)}" class="chat-prompt-chip py-1 px-2.5 bg-slate-100 hover:bg-red-50 hover:border-red-200 text-slate-700 hover:text-red-700 text-[11px] font-medium rounded-xl border border-slate-200 transition">
+                    💡 ${escapeHtml(chip)}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
         loadingNode.outerHTML = `
           <div class="flex justify-start mb-4 chat-bubble-anim">
-            <div class="bg-white border border-slate-200 text-slate-800 p-4 rounded-2xl rounded-tl-none text-xs max-w-[90%] shadow-md space-y-2">
+            <div class="bg-white border border-slate-200 text-slate-800 p-4 sm:p-5 rounded-3xl rounded-tl-none text-xs sm:text-sm max-w-[90%] shadow-md space-y-3">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <span class="font-bold text-red-600 flex items-center gap-1.5">
-                  🤖 <span>Medical Chatbot (Sarvam AI)</span>
+                  🩺 <span>Virtual Doctor Assistant</span>
                 </span>
-                <span class="text-[10px] text-slate-400 font-mono">Verified Response</span>
+                <span class="text-[10px] text-slate-400 font-mono">Care guidance</span>
               </div>
-              <p class="leading-relaxed text-slate-700 font-medium whitespace-pre-line">${escapeHtml(data.answer)}</p>
+              
+              <div class="leading-relaxed text-slate-800 space-y-2">
+                ${parsedAnswerHtml}
+              </div>
+
               ${contextsHtml}
-              <div class="mt-2 p-2 bg-amber-50 border border-amber-200/80 rounded-xl text-[10px] text-amber-800 leading-tight">
-                ${escapeHtml(data.disclaimer)}
-              </div>
+              ${followupsHtml}
             </div>
           </div>
         `;
@@ -267,229 +367,580 @@ async function sendChatMessage(event, predefinedMsg) {
       console.error(err);
       const loadingNode = document.getElementById(tempAiId);
       if (loadingNode) {
-        loadingNode.innerHTML = `<div class="p-3 text-red-600 text-xs font-semibold">Error connecting to Medical Chatbot backend.</div>`;
+        loadingNode.outerHTML = `
+          <div class="flex justify-start mb-4 chat-bubble-anim">
+            <div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-3xl rounded-tl-none text-xs max-w-[85%] shadow-sm">
+              ⚠️ Connection error. Please check your internet or try again.
+            </div>
+          </div>
+        `;
       }
     }
   }
 }
 
-// In-Chat Prescription OCR Upload Handler with Strict Validation Checking
-async function handleInChatOcrUpload(file) {
-  const chatStream = document.querySelector('#chat-message-stream');
-  if (!chatStream) return;
+function handleInChatOcrUpload(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    setAttachedImage(e.target.result, file.name);
+  };
+  reader.readAsDataURL(file);
+}
 
-  const fileName = file ? file.name : 'sample_prescription.jpg';
 
-  // Append User Image Bubble
-  chatStream.innerHTML += `
-    <div class="flex justify-end mb-3 chat-bubble-anim">
-      <div class="bg-purple-600 text-white p-3.5 rounded-2xl rounded-tr-none text-xs font-semibold max-w-[85%] shadow-sm space-y-1">
-        <div class="flex items-center gap-2">
-          <span>📷</span>
-          <span>Uploaded Document: <strong>${escapeHtml(fileName)}</strong></span>
-        </div>
-      </div>
-    </div>
-  `;
+// ============================================================================
+// HOSPITAL FINDER & INTERACTIVE LEAFLET MAP ENGINE
+// ============================================================================
 
-  // Append Typing Indicator Bubble
-  const tempOcrId = 'ocr-loading-' + Date.now();
-  chatStream.innerHTML += `
-    <div id="${tempOcrId}" class="flex justify-start mb-3 chat-bubble-anim">
-      <div class="bg-white border border-purple-200 text-slate-700 p-3.5 rounded-2xl rounded-tl-none text-xs max-w-[85%] space-y-2 shadow-sm">
-        <div class="flex items-center gap-2 text-purple-700 font-bold">
-          <span>📷 Scanning & Validating Image Content...</span>
-          <div class="typing-dots">
-            <span></span><span></span><span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  chatStream.scrollTop = chatStream.scrollHeight;
+let hospitalMap = null;
+let mapMarkersLayer = null;
+let currentHospitals = [];
+
+function initHospitalMap() {
+  const mapEl = document.getElementById('hospital-map');
+  if (!mapEl || hospitalMap) return;
 
   try {
-    let responseData;
-    if (file) {
-      const formData = new FormData();
-      formData.append('file', file);
-      const resp = await fetch('/api/ocr', {
-        method: 'POST',
-        body: formData
-      });
-      responseData = await resp.json();
-    } else {
-      responseData = await api('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file_name: fileName })
-      });
+    if (typeof L !== 'undefined') {
+      hospitalMap = L.map('hospital-map').setView([26.8467, 80.9462], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors | MedAlert Lucknow'
+      }).addTo(hospitalMap);
+
+      mapMarkersLayer = L.layerGroup().addTo(hospitalMap);
+    }
+  } catch (err) {
+    console.warn('Leaflet map initialization notice:', err);
+  }
+}
+
+function updateHospitalMapMarkers(hospitals) {
+  if (!hospitalMap || !mapMarkersLayer || typeof L === 'undefined') return;
+
+  mapMarkersLayer.clearLayers();
+  const bounds = [];
+
+  hospitals.forEach(h => {
+    const lat = parseFloat(h.latitude);
+    const lng = parseFloat(h.longitude);
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+      bounds.push([lat, lng]);
+
+      const mapQuery = encodeURIComponent(`${h.name} ${h.address}`);
+      const googleMapUrl = `https://maps.google.com/?q=${mapQuery}`;
+
+      const popupContent = `
+        <div class="p-2 space-y-2 text-slate-900 font-sans max-w-[240px]">
+          <div class="font-bold text-sm text-red-600 leading-tight">${escapeHtml(h.name)}</div>
+          <div class="text-[11px] text-slate-500 font-medium">📍 ${escapeHtml(h.area)} · ${escapeHtml(h.facility_type)}</div>
+          
+          <div class="grid grid-cols-3 gap-1 text-[10px] text-center font-bold py-1 bg-slate-100 rounded-lg">
+            <div class="p-1"><span class="block text-slate-400 font-normal">Total</span>${h.beds || 0}</div>
+            <div class="p-1 text-red-600"><span class="block text-slate-400 font-normal">ICU</span>${h.icu_beds || 0}</div>
+            <div class="p-1 text-emerald-600"><span class="block text-slate-400 font-normal">Emerg</span>${h.emergency_beds || 0}</div>
+          </div>
+
+          <div class="text-[11px] font-semibold text-slate-700">
+            🏥 ${escapeHtml(h.trauma_level || 'Emergency Care')}
+          </div>
+
+          <div class="pt-1 flex items-center justify-between gap-1 border-t border-slate-200">
+            <a href="tel:${escapeHtml(h.phone)}" class="py-1 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] rounded-lg transition">📞 Call ${escapeHtml(h.phone)}</a>
+            <a href="${googleMapUrl}" target="_blank" class="py-1 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] rounded-lg border border-blue-200 transition">🗺️ Map ↗</a>
+          </div>
+        </div>
+      `;
+
+      const marker = L.marker([lat, lng]).bindPopup(popupContent);
+      mapMarkersLayer.addLayer(marker);
+    }
+  });
+
+  if (bounds.length > 0) {
+    hospitalMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+  }
+}
+
+async function loadHospitals() {
+  const container = document.getElementById('hospital-results');
+  const badge = document.getElementById('hospital-count-badge');
+  if (!container) return;
+
+  initHospitalMap();
+
+  const query = document.getElementById('hospital-query')?.value || '';
+  const area = document.getElementById('area')?.value || '';
+  const specialty = document.getElementById('specialty')?.value || '';
+  const facilityType = document.getElementById('facility-type')?.value || '';
+  const scheme = document.getElementById('scheme-filter')?.value || '';
+  const emergencyOnly = document.getElementById('emergency')?.checked ? 'true' : 'false';
+
+  const params = new URLSearchParams({
+    q: query,
+    area: area,
+    specialty: specialty,
+    facility_type: facilityType,
+    scheme: scheme,
+    emergency: emergencyOnly
+  });
+
+  try {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-slate-500 space-y-2">
+        <div class="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-xs font-semibold">Searching Lucknow emergency hospital network...</p>
+      </div>
+    `;
+
+    const data = await api(`/api/hospitals?${params.toString()}`);
+    currentHospitals = data.hospitals || [];
+
+    if (badge) {
+      badge.textContent = `${data.count} Empanelled Hospitals Found`;
     }
 
-    const loadingNode = document.getElementById(tempOcrId);
-    if (loadingNode) {
-      if (responseData.status === 'error') {
-        loadingNode.outerHTML = `
-          <div class="flex justify-start mb-4 chat-bubble-anim">
-            <div class="bg-red-50 border border-red-200 text-red-900 p-4 rounded-2xl rounded-tl-none text-xs max-w-[90%] shadow-md space-y-2">
-              <div class="flex items-center gap-2 font-bold text-red-700 border-b border-red-200/80 pb-2">
-                <span>⚠️ Image Content Validation Error</span>
+    if (currentHospitals.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3">
+          <div class="text-4xl">🏥</div>
+          <h3 class="font-bold text-lg text-slate-800">No matching Lucknow hospitals found</h3>
+          <p class="text-xs text-slate-500">Try adjusting your specialty, area, or scheme filters.</p>
+        </div>
+      `;
+      if (mapMarkersLayer) mapMarkersLayer.clearLayers();
+      return;
+    }
+
+    updateHospitalMapMarkers(currentHospitals);
+
+    container.innerHTML = currentHospitals.map(h => {
+      const mapQuery = encodeURIComponent(`${h.name} ${h.address}`);
+      const googleMapUrl = `https://maps.google.com/?q=${mapQuery}`;
+      const isEmergency = String(h.emergency).toLowerCase() === 'yes';
+
+      return `
+        <div class="bg-white border border-slate-200 hover:border-red-300 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4 group">
+          
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="px-2.5 py-0.5 bg-slate-100 text-slate-700 font-bold text-[10px] rounded-full uppercase tracking-wider">${escapeHtml(h.facility_type || 'Hospital')}</span>
+                <h3 class="font-bold text-lg font-heading text-slate-900 group-hover:text-red-600 transition-colors mt-1 leading-snug">${escapeHtml(h.name)}</h3>
               </div>
-              <p class="font-medium text-slate-800">${escapeHtml(responseData.error)}</p>
-              <div class="text-[11px] text-red-700">Please upload a clear medical prescription image containing doctor instructions, drug names, or dosage details.</div>
+              <span class="px-2.5 py-1 bg-amber-50 text-amber-800 font-extrabold text-xs rounded-xl border border-amber-200 shrink-0">⭐ ${escapeHtml(h.rating || '4.5')}</span>
             </div>
+
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+              <span>📍 ${escapeHtml(h.area)}</span>
+              <span>•</span>
+              <span>${escapeHtml(h.address)}</span>
+            </p>
+
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                <span>Bed Capacity Readiness:</span>
+                ${isEmergency ? '<span class="text-red-600 font-extrabold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span> 24/7 Trauma Ready</span>' : ''}
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                <div class="p-2 bg-white rounded-xl border border-slate-200">
+                  <div class="text-[10px] text-slate-400">Total Beds</div>
+                  <div class="font-bold text-slate-800 font-heading">${h.beds || 0}</div>
+                </div>
+                <div class="p-2 bg-red-50 rounded-xl border border-red-200">
+                  <div class="text-[10px] text-red-500 font-medium">ICU Beds</div>
+                  <div class="font-extrabold text-red-700 font-heading">${h.icu_beds || 0}</div>
+                </div>
+                <div class="p-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <div class="text-[10px] text-emerald-600 font-medium">Emergency</div>
+                  <div class="font-extrabold text-emerald-700 font-heading">${h.emergency_beds || 0}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-xs space-y-1">
+              <div class="font-semibold text-slate-700">🩺 Clinical Specialties:</div>
+              <p class="text-slate-500 text-[11px] leading-relaxed">${escapeHtml(h.specialties)}</p>
+            </div>
+
+            ${h.empanelled_schemes ? `
+              <div class="text-xs space-y-1">
+                <div class="font-semibold text-slate-700">📜 Empanelled Schemes:</div>
+                <p class="text-amber-800 text-[11px] font-medium leading-relaxed">${escapeHtml(h.empanelled_schemes)}</p>
+              </div>
+            ` : ''}
+
+            ${h.treatment_cost_range ? `
+              <div class="text-xs space-y-1 pt-1 border-t border-slate-100">
+                <div class="text-[11px] text-slate-500">Consultation / Cost: <span class="font-bold text-slate-800">${escapeHtml(h.avg_consultation_fee || 'Standard')}</span> (${escapeHtml(h.treatment_cost_range)})</div>
+              </div>
+            ` : ''}
           </div>
-        `;
-      } else {
-        const info = responseData.prescription_info || {};
-        const meds = responseData.medications || [];
 
-        loadingNode.outerHTML = `
-          <div class="flex justify-start mb-4 chat-bubble-anim">
-            <div class="bg-white border border-purple-200 text-slate-800 p-5 rounded-2xl rounded-tl-none text-xs max-w-[95%] shadow-md space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span class="font-bold text-purple-700 flex items-center gap-1.5 text-xs">
-                  📄 <span>OCR Prescription Breakdown</span>
-                </span>
-                <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-extrabold rounded">Verified Doctor Report</span>
-              </div>
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+            <a href="tel:${escapeHtml(h.phone)}" class="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition flex items-center gap-1.5">
+              <span>📞 Call Triage: ${escapeHtml(h.phone)}</span>
+            </a>
+            <a href="${googleMapUrl}" target="_blank" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-200 transition flex items-center gap-1">
+              <span>🗺️ Directions ↗</span>
+            </a>
+          </div>
 
-              <div class="p-3 bg-purple-50/60 border border-purple-100 rounded-xl space-y-1">
-                <div class="font-bold text-slate-900 text-sm">${escapeHtml(info.clinic)}</div>
-                <div class="text-slate-600 text-xs">Physician: <strong>${escapeHtml(info.doctor)}</strong> (${escapeHtml(info.reg_no)})</div>
-                <div class="text-[11px] text-slate-500">Date: ${escapeHtml(info.date)} · ${escapeHtml(info.patient)}</div>
-              </div>
+        </div>
+      `;
+    }).join('');
 
-              <div class="space-y-2">
-                <h5 class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                  <span>💊 Detected Medications & Dosage Instructions (${meds.length}):</span>
-                </h5>
+  } catch (err) {
+    console.error('Error fetching hospital listings:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="col-span-full p-8 bg-red-50 border border-red-200 text-red-800 rounded-3xl text-center text-xs">
+          ⚠️ Unable to load Lucknow hospital directory. Please try again.
+        </div>
+      `;
+    }
+  }
+}
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  ${meds.map(m => `
-                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 hover:border-purple-300 transition">
-                      <div class="flex items-start justify-between gap-1">
-                        <span class="font-bold text-slate-900 text-xs">${escapeHtml(m.name)}</span>
-                        <span class="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-[9px] font-bold rounded">${escapeHtml(m.type)}</span>
-                      </div>
-                      <div class="text-[11px] text-purple-900 font-bold bg-purple-100/50 p-1.5 rounded-md">
-                        Dosage: ${escapeHtml(m.dosage)} (${escapeHtml(m.duration)})
-                      </div>
-                      <div class="text-[11px] space-y-0.5 text-slate-600">
-                        <p><strong>Primary Uses:</strong> ${escapeHtml(m.uses)}</p>
-                        <p><strong>Side Effects:</strong> ${escapeHtml(m.side_effects)}</p>
-                        <p class="text-amber-800 font-medium"><strong>Precaution:</strong> ${escapeHtml(m.precautions)}</p>
-                      </div>
-                    </div>
-                  `).join('')}
+
+// ============================================================================
+// BLOOD & ORGAN DONOR REGISTRY ENGINE
+// ============================================================================
+
+async function loadDonors() {
+  const container = document.getElementById('donor-results');
+  const badge = document.getElementById('donor-count-badge');
+  if (!container) return;
+
+  const query = document.getElementById('donor-query')?.value || '';
+  const bloodGroup = document.getElementById('donor-blood-group')?.value || '';
+  const organType = document.getElementById('donor-organ-type')?.value || '';
+
+  const params = new URLSearchParams({
+    q: query,
+    blood_group: bloodGroup,
+    type: organType
+  });
+
+  try {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-slate-500 space-y-2">
+        <div class="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-xs font-semibold">Loading Lucknow donor registry & priority scores...</p>
+      </div>
+    `;
+
+    const data = await api(`/api/donors?${params.toString()}`);
+    const donors = data.donors || [];
+
+    if (badge) {
+      badge.textContent = `${data.count} Registered Donors Active`;
+    }
+
+    if (donors.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3">
+          <div class="text-4xl">🩸</div>
+          <h3 class="font-bold text-lg text-slate-800">No matching donors found</h3>
+          <p class="text-xs text-slate-500">Try broadening your blood group or location search parameters.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = donors.map(d => {
+      const isRare = ['O-', 'AB-', 'A-', 'B-'].includes(String(d.blood_group).toUpperCase());
+      const isOrgan = String(d.organ).toLowerCase() !== 'blood';
+      const isAvailable = String(d.availability).toLowerCase() === 'available';
+
+      return `
+        <div class="bg-white border border-slate-200 hover:border-emerald-300 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4 group">
+          
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 ${isOrgan ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'} rounded-2xl flex items-center justify-center font-extrabold text-xl shadow-sm">
+                  ${isOrgan ? '🫀' : '🩸'}
+                </div>
+                <div>
+                  <h3 class="font-bold text-base font-heading text-slate-900 group-hover:text-emerald-600 transition-colors">${escapeHtml(d.name)}</h3>
+                  <p class="text-xs text-slate-500">📍 ${escapeHtml(d.area)} · Verified Record</p>
                 </div>
               </div>
 
-              <div class="p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-[10px] text-amber-800">
-                ${escapeHtml(responseData.disclaimer)}
+              <span class="px-3 py-1 ${isRare ? 'bg-red-600 text-white animate-pulse' : 'bg-emerald-100 text-emerald-800'} font-extrabold text-xs rounded-xl shadow-sm">
+                ${escapeHtml(d.blood_group)}
+              </span>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 font-medium">Donation Type:</span>
+                <span class="font-bold text-slate-900">${escapeHtml(d.organ)}</span>
               </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 font-medium">Availability Status:</span>
+                <span class="font-extrabold ${isAvailable ? 'text-emerald-600' : 'text-amber-600'}">
+                  ● ${escapeHtml(d.availability)}
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 font-medium">Response Time:</span>
+                <span class="font-bold text-slate-800">~${escapeHtml(d.response_time_mins || 15)} mins</span>
+              </div>
+
+              ${d.priority_score ? `
+                <div class="flex items-center justify-between pt-1 border-t border-slate-200">
+                  <span class="text-slate-500 font-medium">Priority Score:</span>
+                  <span class="font-extrabold text-red-600 font-heading">⚡ ${d.priority_score} / 100</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="text-[11px] text-slate-500 flex items-center justify-between">
+              <span>Urgency: <strong class="text-slate-700">${escapeHtml(d.urgency_priority || 'High')}</strong></span>
+              <span>Donations: <strong class="text-slate-700">${d.donation_count || 0} times</strong></span>
             </div>
           </div>
-        `;
-      }
-      chatStream.scrollTop = chatStream.scrollHeight;
-    }
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <a href="tel:${escapeHtml(d.phone)}" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
+              <span>📞 Contact Emergency Line: ${escapeHtml(d.phone)}</span>
+            </a>
+          </div>
+
+        </div>
+      `;
+    }).join('');
+
   } catch (err) {
-    console.error(err);
-    const loadingNode = document.getElementById(tempOcrId);
-    if (loadingNode) {
-      loadingNode.innerHTML = `<div class="p-3 text-red-600 text-xs font-semibold">Failed to process prescription image.</div>`;
+    console.error('Error loading donor records:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="col-span-full p-8 bg-red-50 border border-red-200 text-red-800 rounded-3xl text-center text-xs">
+          ⚠️ Unable to load Lucknow donor registry. Please try again.
+        </div>
+      `;
     }
   }
 }
 
-// Trauma Triage Submission
-async function submitTriage(event) {
-  event.preventDefault();
-  const form = event.target;
-  const submitBtn = form.querySelector('button[type="submit"]');
-  const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Assess Urgency';
 
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing Symptoms...';
+// ============================================================================
+// UP GOVERNMENT HEALTH SCHEMES ENGINE
+// ============================================================================
+
+async function loadSchemes() {
+  const container = document.getElementById('scheme-results');
+  const badge = document.getElementById('scheme-count-badge');
+  if (!container) return;
+
+  const query = document.getElementById('scheme-query')?.value || '';
+  const department = document.getElementById('scheme-department')?.value || '';
+
+  const params = new URLSearchParams({
+    q: query,
+    department: department
+  });
+
+  try {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-slate-500 space-y-2">
+        <div class="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-xs font-semibold">Fetching UP State health schemes & coverage portals...</p>
+      </div>
+    `;
+
+    const data = await api(`/api/schemes?${params.toString()}`);
+    const schemes = data.schemes || [];
+
+    if (badge) {
+      badge.textContent = `${data.count} Government Schemes Active`;
+    }
+
+    if (schemes.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3">
+          <div class="text-4xl">📜</div>
+          <h3 class="font-bold text-lg text-slate-800">No matching health schemes found</h3>
+          <p class="text-xs text-slate-500">Try adjusting your keyword search or department filter.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = schemes.map(s => {
+      const docs = String(s.documentation_required || '').split(';').map(d => d.trim()).filter(Boolean);
+
+      return `
+        <div class="bg-white border border-slate-200 hover:border-amber-300 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-5 group">
+          
+          <div class="space-y-4">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <span class="px-3 py-1 bg-amber-100 text-amber-900 font-extrabold text-[10px] rounded-full uppercase tracking-wider">${escapeHtml(s.department)}</span>
+                <h3 class="font-bold text-xl font-heading text-slate-900 group-hover:text-amber-700 transition-colors mt-1.5">${escapeHtml(s.name)}</h3>
+              </div>
+              <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0">
+                📜
+              </div>
+            </div>
+
+            <div class="p-4 bg-amber-50/60 rounded-2xl border border-amber-100 space-y-1.5">
+              <div class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                <span>🎁 Coverage Benefit:</span>
+              </div>
+              <p class="text-xs text-amber-950 leading-relaxed font-semibold">${escapeHtml(s.benefit)}</p>
+            </div>
+
+            <div class="space-y-1.5 text-xs">
+              <div class="font-bold text-slate-800">📋 Eligibility Criteria:</div>
+              <p class="text-slate-600 text-xs leading-relaxed">${escapeHtml(s.eligibility)}</p>
+            </div>
+
+            ${docs.length > 0 ? `
+              <div class="space-y-2 pt-2 border-t border-slate-100">
+                <div class="text-xs font-bold text-slate-800">📁 Required Documents Checklist:</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${docs.map(doc => `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded-xl border border-slate-200">
+                      <span>✓</span> <span>${escapeHtml(doc)}</span>
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <a href="${escapeHtml(s.link || 'https://up.gov.in/')}" target="_blank" class="w-full py-3 px-6 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-md transition flex items-center justify-center gap-2">
+              <span>Apply / Official UP Govt Portal</span>
+              <span>↗</span>
+            </a>
+          </div>
+
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading UP schemes:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="col-span-full p-8 bg-red-50 border border-red-200 text-red-800 rounded-3xl text-center text-xs">
+          ⚠️ Unable to load UP health schemes directory. Please try again.
+        </div>
+      `;
+    }
   }
+}
 
-  const checkedSymptoms = [...document.querySelectorAll('input[name="symptom"]:checked')].map(i => i.value);
+
+// ============================================================================
+// EMERGENCY TRAUMA TRIAGE HANDLER
+// ============================================================================
+
+async function handleTriageSubmit(e) {
+  if (e) e.preventDefault();
+
+  const container = document.getElementById('triage-result');
+  if (!container) return;
+
+  const symptomEls = document.querySelectorAll('input[name="symptom"]:checked');
+  const symptoms = Array.from(symptomEls).map(el => el.value);
+
   const vitals = {
-    oxygen: document.querySelector('#oxygen')?.value || 98,
-    heart_rate: document.querySelector('#heart-rate')?.value || 75,
-    sys_bp: document.querySelector('#sys-bp')?.value || 120
+    oxygen: parseFloat(document.getElementById('oxygen')?.value || 98),
+    heart_rate: parseFloat(document.getElementById('heart-rate')?.value || 75),
+    sys_bp: parseFloat(document.getElementById('sys-bp')?.value || 120)
   };
 
   try {
-    const result = await api('/api/triage', {
+    container.innerHTML = `
+      <div class="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+        <div class="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-xs font-semibold text-slate-600">Calculating clinical urgency score & routing trauma centers...</p>
+      </div>
+    `;
+
+    const assessment = await api('/api/triage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symptoms: checkedSymptoms, vitals })
+      body: JSON.stringify({ symptoms, vitals })
     });
 
-    const target = document.querySelector('#triage-result');
-    if (!target) return;
+    let levelBg = 'bg-emerald-600 text-white';
+    let levelBorder = 'border-emerald-500';
+    let alertTitle = '🟢 Low Urgency / Monitored Care';
 
-    let levelBg = 'bg-emerald-50 border-emerald-300 text-emerald-900';
-    let badgeColor = 'bg-emerald-600 text-white';
-    let progressBg = 'bg-emerald-500';
-
-    if (result.level === 'RED') {
-      levelBg = 'bg-red-50 border-red-300 text-red-900';
-      badgeColor = 'bg-red-600 text-white';
-      progressBg = 'bg-red-600';
-    } else if (result.level === 'AMBER') {
-      levelBg = 'bg-amber-50 border-amber-300 text-amber-900';
-      badgeColor = 'bg-amber-500 text-white';
-      progressBg = 'bg-amber-500';
+    if (assessment.level === 'RED') {
+      levelBg = 'bg-red-600 text-white';
+      levelBorder = 'border-red-600';
+      alertTitle = '🚨 CRITICAL EMERGENCY - IMMEDIATE DISPATCH NEEDED';
+    } else if (assessment.level === 'AMBER') {
+      levelBg = 'bg-amber-500 text-slate-950';
+      levelBorder = 'border-amber-500';
+      alertTitle = '⚠️ URGENT MEDICAL CARE REQUIRED';
     }
 
-    let vitalWarningsHtml = '';
-    if (result.vital_warnings && result.vital_warnings.length > 0) {
-      vitalWarningsHtml = `
-        <div class="mb-4 p-3 bg-red-100/80 border border-red-200 rounded-lg text-xs font-semibold text-red-800">
-          <strong>⚠️ Vital Sign Warnings:</strong>
-          <ul class="list-disc ml-5 mt-1 space-y-0.5">
-            ${result.vital_warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}
+    let warningsHtml = '';
+    if (assessment.vital_warnings && assessment.vital_warnings.length > 0) {
+      warningsHtml = `
+        <div class="p-4 bg-red-50 border border-red-200 rounded-2xl space-y-1.5">
+          <div class="text-xs font-extrabold text-red-800 uppercase tracking-wider">⚠️ Vital Sign Alert Warnings:</div>
+          <ul class="text-xs text-red-700 space-y-1 font-semibold">
+            ${assessment.vital_warnings.map(w => `<li>• ${escapeHtml(w)}</li>`).join('')}
           </ul>
         </div>
       `;
     }
 
     let actionStepsHtml = '';
-    if (result.action_steps && result.action_steps.length > 0) {
+    if (assessment.action_steps && assessment.action_steps.length > 0) {
       actionStepsHtml = `
-        <div class="mb-4">
-          <h4 class="font-bold text-sm text-slate-800 mb-2">Emergency Action Protocol:</h4>
-          <ol class="list-decimal ml-5 space-y-1 text-sm text-slate-700">
-            ${result.action_steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+        <div class="space-y-2">
+          <div class="text-xs font-bold text-slate-900 uppercase tracking-wider">Immediate Clinical Action Steps:</div>
+          <ol class="space-y-2">
+            ${assessment.action_steps.map((step, idx) => `
+              <li class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 flex items-start gap-2.5">
+                <span class="w-5 h-5 bg-slate-900 text-white rounded-lg flex items-center justify-center font-bold text-xs shrink-0">${idx + 1}</span>
+                <span class="leading-relaxed font-medium">${escapeHtml(step)}</span>
+              </li>
+            `).join('')}
           </ol>
         </div>
       `;
     }
 
-    let hospitalRecsHtml = '';
-    if (result.recommended_hospitals && result.recommended_hospitals.length > 0) {
-      hospitalRecsHtml = `
-        <div class="mt-5 pt-4 border-t border-slate-200">
-          <h4 class="font-bold text-sm text-slate-800 mb-2 flex items-center gap-1.5">
-            <span>🚑 Recommended Emergency Facilities Nearby:</span>
-          </h4>
-          <div class="space-y-2">
-            ${result.recommended_hospitals.map(h => `
-              <div class="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between text-xs hover:border-slate-300 transition">
-                <div>
-                  <div class="font-bold text-slate-900 text-sm">${escapeHtml(h.name)}</div>
-                  <div class="text-slate-500">${escapeHtml(h.area)} · ${escapeHtml(h.specialties)}</div>
+    let hospitalsHtml = '';
+    if (assessment.recommended_hospitals && assessment.recommended_hospitals.length > 0) {
+      hospitalsHtml = `
+        <div class="space-y-3 pt-4 border-t border-slate-200">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-900 flex items-center justify-between">
+            <span>Recommended Lucknow Emergency Hospitals:</span>
+            <span class="text-[10px] text-red-600 font-bold">24/7 Trauma Ready</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            ${assessment.recommended_hospitals.map(h => `
+              <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2 text-xs shadow-sm">
+                <div class="font-bold text-slate-900 font-heading text-sm">${escapeHtml(h.name)}</div>
+                <div class="text-[11px] text-slate-500">📍 ${escapeHtml(h.area)} · ${escapeHtml(h.trauma_level || 'Trauma Center')}</div>
+                
+                <div class="text-[11px] font-medium text-slate-700">
+                  🛏️ ICU Beds: <strong class="text-red-600">${h.icu_beds || 0}</strong> | Emergency: <strong class="text-emerald-600">${h.emergency_beds || 0}</strong>
                 </div>
-                <div class="text-right space-y-1">
-                  <span class="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded text-[11px]">${escapeHtml(h.beds)} Beds</span>
-                  <div>
-                    <a href="tel:${escapeHtml(h.phone)}" class="font-semibold text-red-600 hover:underline mr-2">📞 Call</a>
-                    ${h.map_url ? `<a href="${escapeHtml(h.map_url)}" target="_blank" class="font-semibold text-blue-600 hover:underline">🗺️ Map</a>` : ''}
-                  </div>
+
+                <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-100">
+                  <a href="tel:${escapeHtml(h.phone)}" class="py-1.5 px-3 bg-red-600 text-white font-bold text-[11px] rounded-xl hover:bg-red-700 transition">📞 Call ${escapeHtml(h.phone)}</a>
+                  ${h.map_url ? `<a href="${escapeHtml(h.map_url)}" target="_blank" class="py-1.5 px-3 bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px] rounded-xl hover:bg-blue-100 transition">🗺️ Map ↗</a>` : ''}
                 </div>
               </div>
             `).join('')}
@@ -498,252 +949,339 @@ async function submitTriage(event) {
       `;
     }
 
-    target.innerHTML = `
-      <div class="border rounded-2xl p-6 ${levelBg} transition-all duration-300 shadow-md">
-        <div class="flex items-center justify-between gap-4 mb-3">
-          <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm ${badgeColor}">
-            ${escapeHtml(result.level)} Priority (${escapeHtml(result.score)}/100)
-          </span>
-          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Triage Score</span>
-        </div>
+    container.innerHTML = `
+      <div class="bg-white border ${levelBorder} rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 animate-fade-in">
         
-        <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mb-4">
-          <div class="${progressBg} h-full transition-all duration-500" style="width: ${result.score}%"></div>
+        <!-- Header Banner -->
+        <div class="${levelBg} p-5 rounded-2xl shadow-md flex items-center justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest opacity-80">Triage Assessment Score: ${assessment.score} / 100</span>
+            <h3 class="text-xl sm:text-2xl font-black font-heading mt-0.5">${escapeHtml(assessment.level_label || alertTitle)}</h3>
+          </div>
+
+          <button onclick="openSosModal()" class="py-2.5 px-4 bg-white text-red-600 font-extrabold text-xs rounded-xl shadow transition shrink-0 hover:bg-red-50">
+            🚨 SOS 112
+          </button>
         </div>
 
-        <h3 class="text-xl font-bold font-heading mb-2 text-slate-900">${escapeHtml(result.level_label)}</h3>
-        
-        ${vitalWarningsHtml}
+        ${warningsHtml}
         ${actionStepsHtml}
-        ${hospitalRecsHtml}
+        ${hospitalsHtml}
 
-        <div class="mt-5 p-3 bg-white/70 border border-slate-200/80 rounded-xl text-[11px] text-slate-600 leading-relaxed">
-          ${escapeHtml(result.disclaimer)}
+        <div class="pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed italic">
+          ${escapeHtml(assessment.disclaimer)}
         </div>
+
       </div>
     `;
 
-    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   } catch (err) {
-    console.error(err);
-    alert('Unable to process triage evaluation. Please check your network connection or call 112.');
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = originalBtnText;
-    }
-  }
-}
-
-// Load Hospitals with Filtering
-async function loadHospitals(event) {
-  if (event) event.preventDefault();
-  const container = document.querySelector('#hospital-results');
-  if (!container) return;
-
-  const area = document.querySelector('#area')?.value || '';
-  const specialty = document.querySelector('#specialty')?.value || '';
-  const emergency = document.querySelector('#emergency')?.checked || false;
-  const facilityType = document.querySelector('#facility-type')?.value || '';
-  const scheme = document.querySelector('#scheme-filter')?.value || '';
-  const q = document.querySelector('#hospital-query')?.value || '';
-
-  const params = new URLSearchParams({ area, specialty, emergency, facility_type: facilityType, scheme, q });
-
-  container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">Loading hospitals...</div>';
-
-  try {
-    const data = await api(`/api/hospitals?${params}`);
-
-    const countBadge = document.querySelector('#hospital-count-badge');
-    if (countBadge) countBadge.textContent = `${data.count} Hospitals Found`;
-
-    if (data.hospitals.length === 0) {
+    console.error('Error assessing triage:', err);
+    if (container) {
       container.innerHTML = `
-        <div class="col-span-full p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500">
-          <div class="text-4xl mb-2">🏥</div>
-          <h4 class="font-bold text-slate-800">No Hospitals Found</h4>
-          <p class="text-sm">Try broadening your search query or removing specialty filters.</p>
+        <div class="p-6 bg-red-50 border border-red-200 text-red-800 rounded-3xl text-xs text-center font-bold">
+          ⚠️ Unable to complete triage assessment. Please call 112 directly if you require emergency care.
         </div>
       `;
-      return;
     }
-
-    container.innerHTML = data.hospitals.map((h) => {
-      const qUrl = encodeURIComponent(`${h.name} ${h.address}`);
-      return `
-        <article class="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-          <div>
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${h.facility_type === 'Government' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'} mb-1.5">
-                  ${escapeHtml(h.facility_type)}
-                </span>
-                <h3 class="font-bold text-lg font-heading text-slate-900 leading-snug">${escapeHtml(h.name)}</h3>
-                <p class="text-xs text-slate-500 font-semibold mt-0.5">📍 ${escapeHtml(h.area)} — ${escapeHtml(h.address)}</p>
-              </div>
-              <div class="text-right shrink-0">
-                <span class="block px-2.5 py-1 bg-red-50 text-red-700 font-bold text-xs rounded-lg border border-red-100">
-                  ${escapeHtml(h.beds)} Beds
-                </span>
-              </div>
-            </div>
-
-            <div class="my-3 py-2 border-y border-slate-100 space-y-1.5">
-              <div class="text-xs text-slate-700"><span class="font-bold text-slate-500">Specialties:</span> ${escapeHtml(h.specialties)}</div>
-              <div class="text-xs text-slate-700"><span class="font-bold text-slate-500">Empanelled Schemes:</span> ${escapeHtml(h.empanelled_schemes)}</div>
-              <div class="text-xs text-slate-700"><span class="font-bold text-slate-500">Consultation Fee:</span> <span class="font-semibold text-emerald-700">${escapeHtml(h.avg_consultation_fee)}</span></div>
-              <div class="text-xs text-slate-700"><span class="font-bold text-slate-500">Treatment Costs:</span> ${escapeHtml(h.treatment_cost_range)}</div>
-            </div>
-          </div>
-
-          <div class="pt-2 flex items-center justify-between gap-2 mt-2">
-            <a href="tel:${escapeHtml(h.phone)}" class="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl text-center shadow-sm transition flex items-center justify-center gap-1">
-              <span>📞 Call Emergency</span>
-            </a>
-            <a href="https://maps.google.com/?q=${qUrl}" target="_blank" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl text-center transition flex items-center justify-center gap-1">
-              <span>🗺️ Map</span>
-            </a>
-          </div>
-        </article>
-      `;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = '<div class="col-span-full text-center py-12 text-red-500 font-semibold">Error loading hospital registry.</div>';
   }
 }
 
-// Load Blood & Organ Donors
-async function loadDonors(event) {
-  if (event) event.preventDefault();
-  const container = document.querySelector('#donor-results');
-  if (!container) return;
 
-  const bg = document.querySelector('#donor-bg-filter')?.value || '';
-  const area = document.querySelector('#donor-area-filter')?.value || '';
+// ============================================================================
+// SERVICE TAB NAVIGATION SWITCHER
+// ============================================================================
 
-  const params = new URLSearchParams({ blood_group: bg, area });
-  container.innerHTML = '<div class="col-span-full text-center py-4 text-xs text-slate-400">Searching donors...</div>';
+function switchServiceTab(tabName) {
+  const doctorContent = document.getElementById('service-tab-content-doctor');
+  const donorsContent = document.getElementById('service-tab-content-donors');
+  const schemesContent = document.getElementById('service-tab-content-schemes');
 
-  try {
-    const data = await api(`/api/donors?${params}`);
+  const doctorBtn = document.getElementById('tab-btn-doctor');
+  const donorsBtn = document.getElementById('tab-btn-donors');
+  const schemesBtn = document.getElementById('tab-btn-schemes');
 
-    if (data.donors.length === 0) {
-      container.innerHTML = '<div class="p-4 text-center text-xs text-slate-500">No matching donors found.</div>';
-      return;
+  if (!doctorContent || !donorsContent || !schemesContent) return;
+
+  // Hide all
+  doctorContent.classList.add('hidden');
+  donorsContent.classList.add('hidden');
+  schemesContent.classList.add('hidden');
+
+  // Reset tab buttons
+  [doctorBtn, donorsBtn, schemesBtn].forEach(btn => {
+    if (btn) {
+      btn.className = 'service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 text-slate-700 hover:bg-slate-100';
     }
+  });
 
-    container.innerHTML = data.donors.map((d) => `
-      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
-        <div>
-          <div class="font-bold text-slate-900">${escapeHtml(d.name)} <span class="px-1.5 py-0.5 bg-red-100 text-red-700 font-extrabold text-[10px] rounded ml-1">${escapeHtml(d.blood_group)}</span></div>
-          <div class="text-slate-500 text-[11px]">Area: ${escapeHtml(d.area)} · ${escapeHtml(d.organ)}</div>
-        </div>
-        <button onclick="alert('Donor Coordinator: Dial +91-522-112-MED for urgent blood match.')" class="py-1 px-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-lg transition text-[11px]">
-          Contact
-        </button>
-      </div>
-    `).join('');
-  } catch (err) {
-    console.error(err);
+  if (tabName === 'donors') {
+    donorsContent.classList.remove('hidden');
+    if (donorsBtn) donorsBtn.className = 'service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 bg-emerald-600 text-white shadow-md';
+    window.location.hash = 'donors';
+    loadDonors();
+  } else if (tabName === 'schemes') {
+    schemesContent.classList.remove('hidden');
+    if (schemesBtn) schemesBtn.className = 'service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 bg-amber-600 text-white shadow-md';
+    window.location.hash = 'schemes';
+    loadSchemes();
+  } else {
+    doctorContent.classList.remove('hidden');
+    if (doctorBtn) doctorBtn.className = 'service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 bg-red-600 text-white shadow-md';
+    window.location.hash = 'doctor';
   }
 }
 
-// Load UP Government Schemes
-async function loadSchemes(event) {
-  if (event) event.preventDefault();
-  const container = document.querySelector('#scheme-results');
-  if (!container) return;
 
-  const query = document.querySelector('#scheme-query')?.value || '';
-  const params = new URLSearchParams({ q: query });
+// ============================================================================
+// DOCUMENT INITIALIZER
+// ============================================================================
 
-  container.innerHTML = '<div class="col-span-full text-center py-4 text-xs text-slate-400">Searching schemes...</div>';
-
-  try {
-    const data = await api(`/api/schemes?${params}`);
-
-    if (data.schemes.length === 0) {
-      container.innerHTML = '<div class="p-4 text-center text-xs text-slate-500">No matching schemes found.</div>';
-      return;
-    }
-
-    container.innerHTML = data.schemes.map((s) => `
-      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-        <div class="font-bold text-slate-900 flex items-center justify-between">
-          <span>${escapeHtml(s.name)}</span>
-          <span class="text-[10px] text-amber-700 font-semibold bg-amber-100 px-1.5 py-0.5 rounded">${escapeHtml(s.department)}</span>
-        </div>
-        <p class="text-[11px] text-slate-600">Benefit: ${escapeHtml(s.benefit)}</p>
-      </div>
-    `).join('');
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Global Initialization
 document.addEventListener('DOMContentLoaded', () => {
-  // SOS Triggers
+
+  // Profile menu and account settings
+  const profileAvatar = document.getElementById('profile-avatar');
+  const profileMenu = document.getElementById('profile-menu');
+  const closeProfileMenu = document.getElementById('close-profile-menu');
+  const profileForm = document.getElementById('profile-form');
+  if (profileAvatar && profileMenu) {
+    profileAvatar.addEventListener('click', () => {
+      const isHidden = profileMenu.classList.toggle('hidden');
+      profileAvatar.setAttribute('aria-expanded', String(!isHidden));
+    });
+    if (closeProfileMenu) closeProfileMenu.addEventListener('click', () => profileMenu.classList.add('hidden'));
+  }
+  if (profileForm) {
+    profileForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const result = document.getElementById('profile-result');
+      const values = Object.fromEntries(new FormData(profileForm));
+      try {
+        const response = await fetch('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to update profile.');
+        if (result) { result.textContent = 'Settings saved.'; result.className = 'text-xs text-emerald-700'; }
+        if (profileAvatar) profileAvatar.textContent = data.full_name.trim().charAt(0).toUpperCase();
+      } catch (error) {
+        if (result) { result.textContent = error.message; result.className = 'text-xs text-red-700'; }
+      }
+    });
+  }
+
+  // 1. SOS Dispatch Buttons
   document.querySelectorAll('.sos-trigger-btn').forEach(btn => {
     btn.addEventListener('click', openSosModal);
   });
-  document.getElementById('sos-cancel-btn')?.addEventListener('click', cancelSos);
 
-  // Live Camera Triggers
-  document.getElementById('open-camera-btn')?.addEventListener('click', openCameraModal);
-  document.getElementById('inchat-camera-btn')?.addEventListener('click', openCameraModal);
-  document.getElementById('close-camera-btn')?.addEventListener('click', closeCameraModal);
-  document.getElementById('cancel-camera-btn')?.addEventListener('click', closeCameraModal);
-  document.getElementById('snap-photo-btn')?.addEventListener('click', snapPhotoFromCamera);
+  // 2. Camera Open Buttons
+  const cameraBtn = document.getElementById('open-camera-btn');
+  const inchatCamBtn = document.getElementById('inchat-camera-btn');
+  if (cameraBtn) cameraBtn.addEventListener('click', openCameraModal);
+  if (inchatCamBtn) inchatCamBtn.addEventListener('click', openCameraModal);
 
-  // Chat Form Listener
-  document.querySelector('#chat-form')?.addEventListener('submit', (e) => sendChatMessage(e));
-
-  // Voice Mic Button Trigger
-  document.querySelector('#mic-voice-btn')?.addEventListener('click', startVoiceRecognition);
-
-  // In-Chat Prescription OCR File Input
-  const inchatOcrInput = document.querySelector('#inchat-ocr-file');
+  // 3. File Inputs for OCR
+  const inchatOcrInput = document.getElementById('inchat-ocr-file');
   if (inchatOcrInput) {
     inchatOcrInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        handleInChatOcrUpload(e.target.files[0]);
-      }
+      if (e.target.files && e.target.files[0]) handleInChatOcrUpload(e.target.files[0]);
     });
   }
 
-  // Sidebar Prescription OCR File Input
-  const sidebarOcrInput = document.querySelector('#sidebar-ocr-file');
+  const sidebarOcrInput = document.getElementById('sidebar-ocr-file');
   if (sidebarOcrInput) {
     sidebarOcrInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        handleInChatOcrUpload(e.target.files[0]);
+      if (e.target.files && e.target.files[0]) handleInChatOcrUpload(e.target.files[0]);
+    });
+  }
+
+  const removeAttachBtn = document.getElementById('remove-attachment-btn');
+  if (removeAttachBtn) removeAttachBtn.addEventListener('click', clearAttachedImage);
+
+  // 4. Voice Input
+  const micBtn = document.getElementById('mic-voice-btn');
+  if (micBtn) micBtn.addEventListener('click', startVoiceRecognition);
+
+  // 5. Virtual Doctor Chat Form
+  const chatForm = document.getElementById('chat-form');
+  if (chatForm) {
+    chatForm.addEventListener('submit', (e) => sendChatMessage(e, null));
+  }
+
+  const clearBtn = document.getElementById('clear-chat-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      chatHistory = [];
+      clearAttachedImage();
+      const stream = document.getElementById('chat-message-stream');
+      if (stream) {
+        stream.innerHTML = `
+          <div class="flex justify-start chat-bubble-anim">
+            <div class="bg-white border border-slate-200 text-slate-800 p-4 sm:p-5 rounded-3xl rounded-tl-none text-xs max-w-[90%] shadow-sm space-y-2">
+              <div class="font-bold text-red-600 flex items-center gap-1.5">
+                🩺 <span>Virtual Doctor Consultation Cleared</span>
+              </div>
+              <p class="leading-relaxed text-slate-700">
+                Consultation history reset. How can I help you today? Please describe any symptoms or ask a medical query.
+              </p>
+            </div>
+          </div>
+        `;
       }
     });
   }
 
-  document.querySelector('#ocr-sample-sidebar-btn')?.addEventListener('click', () => {
-    handleInChatOcrUpload(null);
+  // 6. Dynamic Chat Prompt Chips Listener
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chat-prompt-chip');
+    if (chip) {
+      const msg = chip.getAttribute('data-msg');
+      if (msg) sendChatMessage(e, msg);
+    }
   });
 
-  // Quick Prompt Chips
-  document.querySelectorAll('.chat-prompt-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const text = chip.getAttribute('data-msg') || chip.textContent.trim();
-      sendChatMessage(null, text);
+  // 7. Hospital Finder Page Controls & Listeners
+  const hospitalForm = document.getElementById('hospital-form');
+  if (hospitalForm) {
+    hospitalForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadHospitals();
     });
-  });
 
-  // Forms
-  document.querySelector('#triage-form')?.addEventListener('submit', submitTriage);
-  document.querySelector('#hospital-form')?.addEventListener('submit', loadHospitals);
-  document.querySelector('#donor-form')?.addEventListener('submit', loadDonors);
-  document.querySelector('#scheme-form')?.addEventListener('submit', loadSchemes);
+    ['hospital-query', 'area', 'specialty', 'facility-type', 'scheme-filter', 'emergency'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('change', () => loadHospitals());
+        if (el.tagName === 'INPUT' && el.type === 'text') {
+          el.addEventListener('input', () => {
+            clearTimeout(window._hospTimer);
+            window._hospTimer = setTimeout(loadHospitals, 300);
+          });
+        }
+      }
+    });
 
-  // Auto Loaders
-  if (document.querySelector('#hospital-results')) loadHospitals();
-  if (document.querySelector('#donor-results')) loadDonors();
-  if (document.querySelector('#scheme-results')) loadSchemes();
+    const resetHospBtn = document.getElementById('reset-hospitals-btn');
+    if (resetHospBtn) {
+      resetHospBtn.addEventListener('click', () => {
+        hospitalForm.reset();
+        setTimeout(loadHospitals, 50);
+      });
+    }
+
+    // View Mode Toggles
+    const viewSplitBtn = document.getElementById('view-split-btn');
+    const viewMapBtn = document.getElementById('view-map-btn');
+    const viewCardsBtn = document.getElementById('view-cards-btn');
+    const mapWrapper = document.getElementById('map-section-wrapper');
+    const cardsWrapper = document.getElementById('cards-section-wrapper');
+
+    if (viewSplitBtn && viewMapBtn && viewCardsBtn && mapWrapper && cardsWrapper) {
+      const setViewMode = (mode) => {
+        [viewSplitBtn, viewMapBtn, viewCardsBtn].forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-slate-900'));
+        [viewSplitBtn, viewMapBtn, viewCardsBtn].forEach(b => b.classList.add('text-slate-600'));
+
+        if (mode === 'map') {
+          viewMapBtn.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+          mapWrapper.classList.remove('hidden');
+          cardsWrapper.classList.add('hidden');
+        } else if (mode === 'cards') {
+          viewCardsBtn.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+          mapWrapper.classList.add('hidden');
+          cardsWrapper.classList.remove('hidden');
+        } else {
+          viewSplitBtn.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+          mapWrapper.classList.remove('hidden');
+          cardsWrapper.classList.remove('hidden');
+        }
+        if (hospitalMap) hospitalMap.invalidateSize();
+      };
+
+      viewSplitBtn.addEventListener('click', () => setViewMode('split'));
+      viewMapBtn.addEventListener('click', () => setViewMode('map'));
+      viewCardsBtn.addEventListener('click', () => setViewMode('cards'));
+    }
+
+    loadHospitals();
+  }
+
+  // 8. Donor Registry Controls & Listeners
+  const donorForm = document.getElementById('donor-filter-form');
+  if (donorForm) {
+    donorForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadDonors();
+    });
+
+    ['donor-query', 'donor-blood-group', 'donor-organ-type'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('change', () => loadDonors());
+        if (el.tagName === 'INPUT' && el.type === 'text') {
+          el.addEventListener('input', () => {
+            clearTimeout(window._donorTimer);
+            window._donorTimer = setTimeout(loadDonors, 300);
+          });
+        }
+      }
+    });
+
+    const resetDonorBtn = document.getElementById('reset-donors-btn');
+    if (resetDonorBtn) {
+      resetDonorBtn.addEventListener('click', () => {
+        donorForm.reset();
+        setTimeout(loadDonors, 50);
+      });
+    }
+  }
+
+  // 9. UP Schemes Controls & Listeners
+  const schemeForm = document.getElementById('scheme-filter-form');
+  if (schemeForm) {
+    schemeForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadSchemes();
+    });
+
+    ['scheme-query', 'scheme-department'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('change', () => loadSchemes());
+        if (el.tagName === 'INPUT' && el.type === 'text') {
+          el.addEventListener('input', () => {
+            clearTimeout(window._schemeTimer);
+            window._schemeTimer = setTimeout(loadSchemes, 300);
+          });
+        }
+      }
+    });
+
+    const resetSchemeBtn = document.getElementById('reset-schemes-btn');
+    if (resetSchemeBtn) {
+      resetSchemeBtn.addEventListener('click', () => {
+        schemeForm.reset();
+        setTimeout(loadSchemes, 50);
+      });
+    }
+  }
+
+  // 10. Trauma Triage Form Listener
+  const triageForm = document.getElementById('triage-form');
+  if (triageForm) {
+    triageForm.addEventListener('submit', handleTriageSubmit);
+  }
+
+  // 11. Initial Route / Hash Auto-Tab Selection
+  const currentPath = window.location.pathname.toLowerCase();
+  const currentHash = window.location.hash.toLowerCase();
+
+  if (currentPath.includes('/donors') || currentHash === '#donors') {
+    switchServiceTab('donors');
+  } else if (currentPath.includes('/schemes') || currentHash === '#schemes') {
+    switchServiceTab('schemes');
+  } else if (currentPath.includes('/services')) {
+    switchServiceTab('doctor');
+  }
+
 });

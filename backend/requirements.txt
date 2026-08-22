@@ -1,8 +1,10 @@
 flask
+twilio
 pandas
-google-generativeai
 langchain
 langchain-community
-langchain-google-genai
+langchain-text-splitters
 chromadb
 sentence-transformers
+Pillow
+pytesseract

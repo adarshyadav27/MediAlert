@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Medical Chatbot — MediAlert Lucknow Multi-Modal RAG & OCR</title>
+  <title>Public Services & Care Network — MedAlert Lucknow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -21,14 +21,17 @@
         </span>
       </a>
 
-      <nav class="hidden md:flex items-center gap-8 font-medium text-sm text-slate-600">
+      <nav class="hidden md:flex items-center gap-6 font-medium text-sm text-slate-600">
         <a href="/" class="hover:text-red-600 transition">Home</a>
-        <a href="/hospitals" class="hover:text-red-600 transition">Hospital Finder</a>
+        <a href="/hospital-finder" class="hover:text-red-600 transition">Hospital Finder</a>
         <a href="/triage" class="hover:text-red-600 transition">Symptom Triage</a>
-        <a href="/services" class="text-red-600 font-bold">Medical Chatbot</a>
+        <a href="/donors" id="nav-link-donors" class="hover:text-red-600 transition">Donor Registry</a>
+        <a href="/schemes" id="nav-link-schemes" class="hover:text-red-600 transition">UP Schemes</a>
+        <a href="/services" id="nav-link-services" class="hover:text-red-600 transition">Medical Consultation</a>
       </nav>
 
       <div class="flex items-center gap-3">
+        {% if current_user %}<div class="relative"><button type="button" id="profile-avatar" aria-expanded="false" aria-controls="profile-menu" class="w-10 h-10 rounded-full bg-emerald-700 text-white font-bold shadow-sm">{{ current_user.full_name[:1]|upper }}</button><div id="profile-menu" class="hidden absolute right-0 top-12 z-50 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-5"><div class="flex items-center justify-between border-b border-slate-100 pb-3"><div><p class="font-bold">{{ current_user.full_name }}</p><p class="text-xs text-slate-500">{{ current_user.role|title }} account</p></div><button type="button" id="close-profile-menu" class="text-slate-400 text-xl">&times;</button></div><form id="profile-form" class="pt-4 space-y-3"><input name="full_name" value="{{ current_user.full_name }}" required class="w-full rounded-lg border border-slate-300 p-2.5 text-sm" placeholder="Full name"><input name="email" type="email" value="{{ current_user.email }}" required class="w-full rounded-lg border border-slate-300 p-2.5 text-sm" placeholder="Email"><input name="mobile" value="{{ current_user.mobile }}" required class="w-full rounded-lg border border-slate-300 p-2.5 text-sm" placeholder="Mobile number"><input name="location" value="{{ current_user.location }}" required class="w-full rounded-lg border border-slate-300 p-2.5 text-sm" placeholder="Location"><input name="new_password" type="password" minlength="8" class="w-full rounded-lg border border-slate-300 p-2.5 text-sm" placeholder="New password (optional)"><button class="w-full rounded-lg bg-slate-900 text-white font-bold py-2.5 text-sm">Save settings</button><p id="profile-result" class="text-xs"></p></form><a href="{{ url_for('logout') }}" class="block text-center text-sm text-red-700 font-semibold pt-2">Sign out</a></div></div>{% if current_user.role == 'admin' %}<a href="{{ url_for('admin') }}" class="hidden sm:inline text-xs font-bold text-emerald-700">Admin</a>{% endif %}{% endif %}
         <button class="sos-trigger-btn sos-pulse-btn py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition">
           🚨 Emergency SOS
         </button>
@@ -36,345 +39,445 @@
     </div>
   </header>
 
-  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-8">
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
     
-    <!-- Ledger Hero Panel (Banking Chatbot Design System) -->
-    <div class="ledger-hero p-6 sm:p-8">
-      <div class="ledger-seal">
-        ⚕️
+    <!-- Service Mode Navigation Tabs Bar -->
+    <div class="bg-white border border-slate-200 rounded-3xl p-2 shadow-sm flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center gap-1 w-full sm:w-auto">
+        <button type="button" id="tab-btn-doctor" onclick="switchServiceTab('doctor')" class="service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 bg-red-600 text-white shadow-md">
+          <span>🩺 Medical Consultation & OCR</span>
+        </button>
+        <button type="button" id="tab-btn-donors" onclick="switchServiceTab('donors')" class="service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 text-slate-700 hover:bg-slate-100">
+          <span>🩸 Blood & Organ Donors</span>
+        </button>
+        <button type="button" id="tab-btn-schemes" onclick="switchServiceTab('schemes')" class="service-tab-btn px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center gap-2 text-slate-700 hover:bg-slate-100">
+          <span>📜 UP Government Schemes</span>
+        </button>
       </div>
 
-      <div class="max-w-2xl space-y-2">
-        <span class="font-mono text-xs text-amber-400 font-semibold tracking-widest uppercase block">
-          OFFICIAL LUCKNOW HEALTHCARE ASSISTANT
-        </span>
-        <h1 class="text-3xl sm:text-4xl font-extrabold font-heading text-slate-50 tracking-tight">
-          Medical Chatbot
-        </h1>
-        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
-          Ask questions in English, Hindi, or Hinglish, snap photos of prescriptions with your camera, or speak voice queries. Powered by ChromaDB Vector RAG and Sarvam AI (`sarvam-105b`).
-        </p>
-      </div>
-
-      <!-- Ledger Strip Stats Bar -->
-      <div class="mt-6 pt-4 border-t border-amber-500/20 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-        <div>
-          <span class="text-slate-400 block text-[11px]">ChromaDB Vector Index:</span>
-          <span class="font-mono font-bold text-amber-400">23 Embedded Chunks</span>
-        </div>
-        <div>
-          <span class="text-slate-400 block text-[11px]">AI Synthesis Model:</span>
-          <span class="font-mono font-bold text-emerald-400">Sarvam-105b LLM</span>
-        </div>
-        <div>
-          <span class="text-slate-400 block text-[11px]">Lucknow Emergency:</span>
-          <span class="font-mono font-bold text-red-400">24/7 Helpline 112</span>
-        </div>
-        <div>
-          <span class="text-slate-400 block text-[11px]">Multi-Modal Inputs:</span>
-          <span class="font-mono font-bold text-cyan-300">Live Camera + OCR + STT</span>
-        </div>
+      <div class="hidden lg:flex items-center gap-2 px-4 py-1 text-xs text-slate-500 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Real-time Lucknow Public Registries Connected</span>
       </div>
     </div>
 
-    <!-- MAIN CHATBOT GRID -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-      <!-- LEFT SIDEBAR: Suggestions & OCR Tool (4 Cols) -->
-      <aside class="lg:col-span-4 space-y-6">
+    <!-- TAB 1: VIRTUAL DOCTOR AI CONSULTATION & PRESCRIPTION OCR -->
+    <div id="service-tab-content-doctor" class="space-y-6">
+      
+      <!-- Hero Banner -->
+      <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-red-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl border border-slate-800 relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
         
-        <!-- Suggestions Card -->
-        <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 bg-slate-900 text-white rounded-xl flex items-center justify-center text-sm font-bold">
-                💬
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-3xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 font-extrabold text-xs tracking-wider uppercase">
+              <span>🩺 Medical Consultant • Clinical Assistant</span>
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
+              Empathetic Virtual Clinical Consultation
+            </h1>
+            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+              Professional symptom guidance, general OTC medicine advice, camera prescription scanning, and intent-based Lucknow healthcare retrieval.
+            </p>
+          </div>
+
+          <div class="shrink-0 flex items-center gap-3 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 text-xs">
+            <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
+            <div>
+              <div class="font-bold text-white">Medical Consultation Active</div>
+              <div class="text-[11px] text-slate-400">Clinical Consultation Active</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN CHATBOT GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT SIDEBAR: Quick Prompt Chips & Live Camera OCR Card (4 Cols) -->
+        <aside class="lg:col-span-4 space-y-6">
+          
+          <!-- Suggestions Card -->
+          <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 bg-slate-900 text-white rounded-xl flex items-center justify-center text-sm font-bold">
+                  💬
+                </div>
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900">Clinical Consultations</h3>
+                  <p class="text-[11px] text-slate-500">1-Click instant doctor query</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full">Active</span>
+            </div>
+
+            <div class="space-y-2">
+              <button type="button" data-msg="I have a high fever, common cold, and loss of appetite. What medicines and care should I take?" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
+                <span>🤒 Fever & Cold Advisory</span>
+                <span class="text-slate-400 text-xs">➔</span>
+              </button>
+              <button type="button" data-msg="Find ICU beds in KGMU and Lohia Institute for emergency care" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
+                <span>🏥 KGMU & Lohia ICU Bed Status</span>
+                <span class="text-slate-400 text-xs">➔</span>
+              </button>
+              <button type="button" data-msg="Emergency blood donor availability in Lucknow for rare O negative group" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
+                <span>🩸 Priority O- Blood Donors</span>
+                <span class="text-slate-400 text-xs">➔</span>
+              </button>
+              <button type="button" data-msg="Ayushman Bharat PM-JAY and CM Jan Arogya card eligibility in UP" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
+                <span>📜 Ayushman Bharat Eligibility</span>
+                <span class="text-slate-400 text-xs">➔</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sidebar Multi-Modal Camera Scanner -->
+          <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
+            <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <div class="w-8 h-8 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-sm font-bold">
+                📷
               </div>
               <div>
-                <h3 class="font-bold text-sm text-slate-900">Quick Prompt Chips</h3>
-                <p class="text-[11px] text-slate-500">Click to query chatbot</p>
+                <h3 class="font-bold text-sm text-slate-900">Prescription OCR Scanner</h3>
+                <p class="text-[11px] text-slate-500">Live Camera & Document Scanner</p>
               </div>
             </div>
-            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full">Interactive</span>
-          </div>
 
-          <div class="space-y-2">
-            <button type="button" data-msg="Find beds in KGMU and Lohia Institute for emergency care" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
-              <span>🏥 Find beds in KGMU?</span>
-              <span class="text-slate-400 text-xs">➔</span>
-            </button>
-            <button type="button" data-msg="Ayushman card eligibility guidelines for UP families" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
-              <span>📜 Ayushman card eligibility?</span>
-              <span class="text-slate-400 text-xs">➔</span>
-            </button>
-            <button type="button" data-msg="Emergency blood donor availability in Lucknow for O positive" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
-              <span>🩸 Emergency blood donor?</span>
-              <span class="text-slate-400 text-xs">➔</span>
-            </button>
-            <button type="button" data-msg="Gomti Nagar me emergency cardiology hospital batao" class="chat-prompt-chip w-full text-left p-3 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 text-slate-800 font-medium text-xs rounded-xl border border-slate-200 transition flex items-center justify-between">
-              <span>🇮🇳 Gomti Nagar me hospital? (Hinglish)</span>
-              <span class="text-slate-400 text-xs">➔</span>
-            </button>
-          </div>
-        </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Snap a photo of your doctor's prescription with your device camera or upload an image to get a structured clinical medicine breakdown.
+            </p>
 
-        <!-- Sidebar OCR & Camera Dropzone -->
-        <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
-          <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div class="w-8 h-8 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-sm font-bold">
-              📷
+            <input type="file" id="sidebar-ocr-file" accept="image/*" capture="environment" class="hidden">
+            
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="open-camera-btn" class="py-3 px-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-2xl shadow-sm transition flex flex-col items-center justify-center gap-1">
+                <span class="text-lg">📸</span>
+                <span>Open Camera</span>
+              </button>
+              <label for="sidebar-ocr-file" class="cursor-pointer py-3 px-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 font-bold text-xs rounded-2xl shadow-sm transition flex flex-col items-center justify-center gap-1 text-center">
+                <span class="text-lg">📁</span>
+                <span>Upload Image</span>
+              </label>
             </div>
-            <div>
-              <h3 class="font-bold text-sm text-slate-900">Prescription OCR Scanner</h3>
-              <p class="text-[11px] text-slate-500">Live Camera & File Scanner</p>
+
+          </div>
+
+        </aside>
+
+        <!-- RIGHT COLUMN: Medical Consultation Chat (8 Cols) -->
+        <section class="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-lg overflow-hidden flex flex-col h-[740px]">
+          
+          <!-- Medical Chatbot Header -->
+          <div class="bg-slate-950 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-amber-500 text-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-md">
+                  🩺
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-slate-950 rounded-full"></span>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="font-bold text-base font-heading text-white">Medical Consultant</h2>
+                  <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold uppercase rounded-full">
+                    Clinical Consultation
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400">Professional Symptom Guidance • Lucknow Medical Network</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button type="button" id="clear-chat-btn" class="text-xs text-slate-400 hover:text-white transition px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl">
+                🗑️ Clear Consultation
+              </button>
             </div>
           </div>
 
-          <p class="text-xs text-slate-500 leading-relaxed">
-            Attach a prescription image or snap a photo with your camera to analyze doctor instructions and medicines.
+          <!-- Chat Stream Window -->
+          <div id="chat-message-stream" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/60">
+            
+            <!-- Medical Consultant Welcome Bubble -->
+            <div class="flex justify-start chat-bubble-anim">
+              <div class="bg-white border border-slate-200 text-slate-800 p-4 sm:p-5 rounded-3xl rounded-tl-none text-xs max-w-[90%] shadow-sm space-y-3">
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                  <span class="font-bold text-red-600 flex items-center gap-1.5">
+                    🩺 <span>Virtual Doctor Assistant</span>
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-mono">Verified Care</span>
+                </div>
+                
+                <p class="leading-relaxed text-slate-700 text-sm">
+                  Hello! 👋 I am your medical consultant. How are you feeling today? Describe your symptoms, or snap a clear photo of a prescription for text review.
+                </p>
+
+                <div class="p-3 bg-red-50/80 border border-red-100 rounded-2xl text-[11px] text-slate-700 space-y-1">
+                  <div class="font-bold text-red-700">⚡ Clinical Features Available:</div>
+                  <div class="flex flex-wrap gap-2 text-slate-600">
+                    <span>• Symptom & OTC Medicine Advisory</span>
+                    <span>• Camera Prescription OCR</span>
+                    <span>• Real-time Bed & Donor Lookup</span>
+                  </div>
+                </div>
+
+                <!-- Initial Dynamic Prompt Chips -->
+                <div class="pt-2 flex flex-wrap gap-2">
+                  <button type="button" data-msg="I have fever and cold. What OTC medicines should I take?" class="chat-prompt-chip text-[11px] py-1.5 px-3 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-medium rounded-xl border border-slate-200 transition">
+                    🤒 Fever & Cold Advisory
+                  </button>
+                  <button type="button" data-msg="Find beds in KGMU and Lohia Institute for emergency care" class="chat-prompt-chip text-[11px] py-1.5 px-3 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-medium rounded-xl border border-slate-200 transition">
+                    🏥 KGMU & Lohia Beds
+                  </button>
+                  <button type="button" data-msg="Show emergency blood donors in Lucknow for O- group" class="chat-prompt-chip text-[11px] py-1.5 px-3 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-medium rounded-xl border border-slate-200 transition">
+                    🩸 Rare O- Donors
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Attachment Preview Bar (shown when photo is selected) -->
+          <div id="attachment-preview-container" class="hidden px-4 py-2 bg-purple-50 border-t border-purple-100 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs text-purple-900 font-medium">
+              <span class="text-base">📸</span>
+              <span>Attached Document:</span>
+              <span id="attachment-file-name" class="font-bold">prescription.jpg</span>
+            </div>
+            <button type="button" id="remove-attachment-btn" class="text-xs text-purple-700 hover:text-purple-900 font-bold px-2 py-0.5 bg-purple-200 rounded">
+              ✕ Remove
+            </button>
+          </div>
+
+          <!-- Multi-Modal In-Chat Input Bar -->
+          <div class="p-3 sm:p-4 bg-white border-t border-slate-200 space-y-2">
+            
+            <!-- Action Toolbar -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <input type="file" id="inchat-ocr-file" accept="image/*" capture="environment" class="hidden">
+              
+              <button type="button" id="inchat-camera-btn" class="shrink-0 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 text-[11px]">
+                <span>📸 Snap Photo / Camera</span>
+              </button>
+
+              <label for="inchat-ocr-file" class="cursor-pointer shrink-0 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl border border-purple-200 transition flex items-center gap-1.5 text-[11px]">
+                <span>📁 Attach Prescription</span>
+              </label>
+              
+              <button type="button" id="mic-voice-btn" class="shrink-0 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl border border-red-200 transition flex items-center gap-1.5 text-[11px]">
+                <span>🎙️ Voice Consult</span>
+              </button>
+            </div>
+
+            <!-- Input Form -->
+            <form id="chat-form" class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input id="chat-input-field" type="text" placeholder="Describe your symptoms (e.g., 'Fever and headache', 'Beds in KGMU')..." class="w-full text-xs sm:text-sm p-3.5 border border-slate-300 rounded-2xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-slate-50 focus:bg-white transition">
+              </div>
+
+              <button type="submit" class="py-3.5 px-6 bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md transition flex items-center gap-1.5 shrink-0">
+                <span>Send</span>
+                <span>➔</span>
+              </button>
+            </form>
+
+          </div>
+
+        </section>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: BLOOD & ORGAN DONOR REGISTRY SECTION -->
+    <div id="service-tab-content-donors" class="hidden space-y-6">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-emerald-600">Priority Dispatch Network</span>
+          <h2 class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 mt-1">Lucknow Blood & Organ Donor Registry</h2>
+          <p class="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
+            Autonomous priority score matching based on rare blood group demand (O-, AB-), response times, location proximity, and verified status.
           </p>
+        </div>
 
-          <input type="file" id="sidebar-ocr-file" accept="image/*,.pdf" capture="environment" class="hidden">
+        <span id="donor-count-badge" class="px-4 py-2 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full border border-emerald-200 shrink-0">
+          Loading Registry...
+        </span>
+      </div>
+
+      <!-- Donor Filters Form -->
+      <form id="donor-filter-form" class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
           
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="open-camera-btn" class="py-3 px-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-2xl shadow-sm transition flex flex-col items-center justify-center gap-1">
-              <span class="text-lg">📸</span>
-              <span>Open Camera</span>
+          <div class="lg:col-span-4">
+            <label for="donor-query" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search Name / Area / Blood Group</label>
+            <input id="donor-query" type="text" placeholder="e.g. Arjun, O-, Gomti Nagar..." class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="donor-blood-group" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Blood Group</label>
+            <select id="donor-blood-group" class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+              <option value="">All Blood Groups</option>
+              <option value="O-">O Universal Negative (Rare)</option>
+              <option value="O+">O Positive</option>
+              <option value="A-">A Negative</option>
+              <option value="A+">A Positive</option>
+              <option value="B-">B Negative</option>
+              <option value="B+">B Positive</option>
+              <option value="AB-">AB Negative (Rare)</option>
+              <option value="AB+">AB Positive</option>
+            </select>
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="donor-organ-type" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Donation Type</label>
+            <select id="donor-organ-type" class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+              <option value="">All Types (Blood & Organ)</option>
+              <option value="blood">Blood Donors Only</option>
+              <option value="organ">Organ / Tissue Donors (Kidney, Cornea)</option>
+            </select>
+          </div>
+
+          <div class="lg:col-span-2 flex items-end">
+            <button type="button" id="reset-donors-btn" class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+              Reset Filters
             </button>
-            <label for="sidebar-ocr-file" class="cursor-pointer py-3 px-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 font-bold text-xs rounded-2xl shadow-sm transition flex flex-col items-center justify-center gap-1 text-center">
-              <span class="text-lg">📁</span>
-              <span>Upload Image</span>
-            </label>
-          </div>
-
-          <button type="button" id="ocr-sample-sidebar-btn" class="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
-            ⚡ Run Sample Prescription OCR Scan
-          </button>
-        </div>
-
-      </aside>
-
-      <!-- RIGHT COLUMN: Medical Chatbot Thread (8 Cols) -->
-      <section class="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-md overflow-hidden flex flex-col h-[720px]">
-        
-        <!-- Medical Chatbot Header -->
-        <div class="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800">
-          <div class="flex items-center gap-3">
-            <div class="relative">
-              <div class="w-10 h-10 bg-red-600 text-white rounded-2xl flex items-center justify-center font-bold text-lg shadow-md">
-                🤖
-              </div>
-              <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-slate-900 rounded-full"></span>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="font-bold text-base font-heading text-white">Medical Chatbot</h2>
-                <span class="px-2 py-0.5 bg-emerald-600/80 text-white text-[10px] font-extrabold uppercase rounded">Active</span>
-              </div>
-              <p class="text-xs text-slate-300">Sarvam AI (`sarvam-105b`) + ChromaDB Vector Retriever</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="document.querySelector('#chat-message-stream').innerHTML=''" class="text-xs text-slate-400 hover:text-white transition px-2.5 py-1.5 bg-slate-800 rounded-lg">
-              Clear Thread
-            </button>
-          </div>
-        </div>
-
-        <!-- Chat Stream Window -->
-        <div id="chat-message-stream" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/70">
-          
-          <!-- AI Welcome Bubble -->
-          <div class="flex justify-start chat-bubble-anim">
-            <div class="bg-white border border-slate-200 text-slate-800 p-4 rounded-2xl rounded-tl-none text-xs max-w-[90%] shadow-sm space-y-2">
-              <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                <span class="font-bold text-red-600 flex items-center gap-1.5">
-                  🤖 <span>Medical Chatbot</span>
-                </span>
-                <span class="text-[10px] text-slate-400 font-mono">100% Verified</span>
-              </div>
-              <p class="leading-relaxed text-slate-700 sound-medium">
-                Hello! How can I help you with medical facilities or schemes in Lucknow? Ask me specific questions about hospitals, trauma beds, UP health schemes, or blood donors!
-              </p>
-              <div class="p-2.5 bg-slate-100 rounded-xl text-[11px] text-slate-600 flex items-center gap-2">
-                <span>💡</span>
-                <span>Click 📸 below to snap a photo or 🎙️ for voice input.</span>
-              </div>
-            </div>
           </div>
 
         </div>
+      </form>
 
-        <!-- Multi-Modal In-Chat Input Bar -->
-        <div class="p-3 sm:p-4 bg-white border-t border-slate-200 space-y-2">
-          
-          <!-- Action Toolbar -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            <input type="file" id="inchat-ocr-file" accept="image/*,.pdf" capture="environment" class="hidden">
-            
-            <button type="button" id="inchat-camera-btn" class="shrink-0 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 text-[11px]">
-              <span>📸 Snap Photo / Camera</span>
-            </button>
-
-            <label for="inchat-ocr-file" class="cursor-pointer shrink-0 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl border border-purple-200 transition flex items-center gap-1.5 text-[11px]">
-              <span>📁 Upload Prescription</span>
-            </label>
-            
-            <button type="button" id="mic-voice-btn" class="shrink-0 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl border border-red-200 transition flex items-center gap-1.5 text-[11px]">
-              <span>🎙️ Voice Input</span>
-            </button>
-          </div>
-
-          <!-- Input Form -->
-          <form id="chat-form" class="flex items-center gap-2">
-            <div class="relative flex-1">
-              <input id="chat-input-field" type="text" placeholder="Type prompt (e.g., 'Find beds in KGMU' or 'Gomti Nagar me hospital')..." class="w-full text-xs sm:text-sm p-3.5 border border-slate-300 rounded-2xl focus:ring-2 focus:ring-red-500 focus:outline-none bg-slate-50 focus:bg-white transition">
-            </div>
-
-            <button type="submit" class="py-3.5 px-6 bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md transition flex items-center gap-1.5 shrink-0">
-              <span>Send</span>
-              <span>➔</span>
-            </button>
-          </form>
-
-        </div>
-
+      <!-- Donor Cards Grid -->
+      <section id="donor-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite">
+        <!-- Loaded dynamically via script.js -->
       </section>
 
     </div>
 
-    <!-- Secondary Registries Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6 border-t border-slate-200">
+    <!-- TAB 3: UP GOVERNMENT HEALTH SCHEMES SECTION -->
+    <div id="service-tab-content-schemes" class="hidden space-y-6">
       
-      <!-- Donor Registry Search -->
-      <section class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 bg-red-100 text-red-600 rounded-xl flex items-center justify-center font-bold text-lg">
-              🩸
-            </div>
-            <div>
-              <h3 class="font-bold text-base text-slate-900">Lucknow Donor Registry</h3>
-              <p class="text-xs text-slate-500">Emergency blood & organ donors</p>
-            </div>
-          </div>
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-amber-600">Uttar Pradesh Health Portal</span>
+          <h2 class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 mt-1">UP Government Health & Welfare Schemes</h2>
+          <p class="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
+            Complete guidelines, eligibility criteria, cash assistance, coverage amounts, required document checklists, and application portals.
+          </p>
         </div>
 
-        <form id="donor-form" class="space-y-3">
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <select id="donor-bg-filter" class="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none bg-white">
-              <option value="">All Blood Groups</option>
-              <option value="o+">O+</option>
-              <option value="o-">O-</option>
-              <option value="a+">A+</option>
-              <option value="b+">B+</option>
-              <option value="ab+">AB+</option>
+        <span id="scheme-count-badge" class="px-4 py-2 bg-amber-100 text-amber-800 font-bold text-xs rounded-full border border-amber-200 shrink-0">
+          Loading Schemes...
+        </span>
+      </div>
+
+      <!-- Scheme Filters Form -->
+      <form id="scheme-filter-form" class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+          
+          <div class="lg:col-span-6">
+            <label for="scheme-query" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search Scheme / Benefit Keyword</label>
+            <input id="scheme-query" type="text" placeholder="e.g. Ayushman, Dialysis, 5 Lakh, JSY..." class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          </div>
+
+          <div class="lg:col-span-4">
+            <label for="scheme-department" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Department</label>
+            <select id="scheme-department" class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+              <option value="">All Departments</option>
+              <option value="Health">Health & Family Welfare UP</option>
+              <option value="National Health Mission">National Health Mission UP</option>
+              <option value="Women and Child">Women & Child Development</option>
+              <option value="Medical Education">Medical Education & Health</option>
             </select>
-            <input id="donor-area-filter" type="text" placeholder="Area (Gomti Nagar...)" class="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none">
-            <button type="submit" class="col-span-2 sm:col-span-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
-              Find Donors
+          </div>
+
+          <div class="lg:col-span-2 flex items-end">
+            <button type="button" id="reset-schemes-btn" class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+              Reset Filters
             </button>
           </div>
-        </form>
 
-        <div id="donor-results" class="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
-          <!-- Loaded dynamically -->
         </div>
-      </section>
+      </form>
 
-      <!-- UP Health Schemes Search -->
-      <section class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center font-bold text-lg">
-              📜
-            </div>
-            <div>
-              <h3 class="font-bold text-base text-slate-900">UP Government Schemes</h3>
-              <p class="text-xs text-slate-500">Public health financial support</p>
-            </div>
-          </div>
-        </div>
-
-        <form id="scheme-form" class="space-y-3">
-          <div class="flex gap-2">
-            <input id="scheme-query" type="text" placeholder="Search (Ayushman, Jan Arogya, TB...)" class="flex-1 text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none">
-            <button type="submit" class="py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
-              Search Schemes
-            </button>
-          </div>
-        </form>
-
-        <div id="scheme-results" class="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
-          <!-- Loaded dynamically -->
-        </div>
+      <!-- Scheme Cards Grid -->
+      <section id="scheme-results" class="grid grid-cols-1 md:grid-cols-2 gap-6" aria-live="polite">
+        <!-- Loaded dynamically via script.js -->
       </section>
 
     </div>
 
   </main>
 
-  <!-- Live Camera Photo Capture Modal -->
-  <div id="camera-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-6 max-w-lg w-full text-center shadow-2xl border border-purple-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+  <!-- Live WebRTC Camera Modal -->
+  <div id="camera-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full text-white space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-xl">📸</span>
-          <h3 class="text-lg font-bold text-slate-900 font-heading">Snap Prescription Photo</h3>
+          <h3 class="font-bold text-base font-heading">Live Camera Prescription Capture</h3>
         </div>
-        <button id="close-camera-btn" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+        <button type="button" onclick="closeCameraModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
 
-      <div class="relative bg-slate-900 rounded-2xl overflow-hidden aspect-video flex items-center justify-center">
+      <div class="relative bg-black rounded-2xl overflow-hidden aspect-video border border-slate-800 flex items-center justify-center">
         <video id="camera-video" autoplay playsinline class="w-full h-full object-cover"></video>
         <canvas id="camera-canvas" class="hidden"></canvas>
-        <div id="camera-overlay" class="absolute inset-4 border-2 border-dashed border-amber-400/80 rounded-xl pointer-events-none flex items-center justify-center">
-          <span class="bg-slate-900/70 text-amber-300 font-mono text-[10px] px-2 py-1 rounded">Position Prescription inside frame</span>
-        </div>
       </div>
 
-      <div class="flex items-center gap-3">
-        <button id="snap-photo-btn" class="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
-          <span>📸 Capture Photo & Process OCR</span>
-        </button>
-        <button id="cancel-camera-btn" class="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-xl transition">
+      <p class="text-xs text-slate-400 text-center">
+        Align your medical prescription or doctor's note inside the frame and snap photo.
+      </p>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button" onclick="closeCameraModal()" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl">
           Cancel
+        </button>
+        <button type="button" onclick="snapPhotoFromCamera()" class="py-2.5 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/30 flex items-center gap-2">
+          <span>📸 Snap & Analyze</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Emergency SOS Dispatch Modal -->
-  <div id="sos-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border border-red-200 space-y-6">
-      <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-black text-4xl mx-auto animate-bounce">
+  <!-- SOS Confirmation Modal -->
+  <div id="sos-modal" class="fixed inset-0 z-50 bg-red-950/90 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-red-600/50 rounded-3xl p-6 max-w-md w-full text-white space-y-5 shadow-2xl text-center">
+      <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-3xl font-extrabold mx-auto shadow-lg shadow-red-600/40 animate-bounce">
         🚨
       </div>
+
       <div>
-        <h3 class="text-2xl font-bold font-heading text-slate-900">Initiating SOS Dispatch</h3>
-        <p class="text-xs text-slate-500 mt-1">Connecting to Lucknow Emergency Control Room (112)</p>
+        <h3 class="text-xl font-extrabold font-heading text-red-500 uppercase tracking-tight">Emergency SOS Signal</h3>
+        <p id="sos-modal-status" class="text-xs text-slate-300 mt-1">Connecting to UP Emergency Control Room (112)...</p>
       </div>
 
-      <div class="sos-number text-6xl font-black text-red-600 font-heading" id="sos-countdown-val">5</div>
-      
-      <p id="sos-modal-status" class="text-xs text-slate-600 font-medium">
-        Stay on line. Paramedic dispatch beacon is activating...
-      </p>
+      <div class="py-3 bg-slate-950 rounded-2xl border border-slate-800">
+        <div class="text-xs text-slate-400">Transmitting Signal In</div>
+        <div id="sos-countdown-val" class="text-4xl font-extrabold font-heading text-amber-400">5</div>
+        <div class="text-[10px] text-slate-500">seconds</div>
+      </div>
 
-      <div class="pt-2">
-        <button id="sos-cancel-btn" class="w-full py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm rounded-xl transition">
-          Cancel Dispatch
+      <div class="flex justify-center gap-3">
+        <button type="button" id="sos-cancel-btn" onclick="cancelSos()" class="py-2.5 px-6 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl">
+          Cancel Emergency Signal
         </button>
       </div>
     </div>
   </div>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200 py-6 mt-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-1">
-      <p class="font-semibold text-slate-700">Medical Chatbot — MediAlert Lucknow Multi-Modal AI Suite</p>
-      <p>Verify medical guidance with certified healthcare professionals.</p>
+  <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <span class="font-bold text-slate-700">MedAlert Lucknow</span> — Medical Consultation & Care Network
+      </div>
+      <div class="flex items-center gap-4">
+        <span>National Helpline: <a href="tel:112" class="font-bold text-red-600 underline">112</a></span>
+        <span>Ambulance: <a href="tel:108" class="font-bold text-amber-600 underline">108</a></span>
+      </div>
     </div>
   </footer>
 

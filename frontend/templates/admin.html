@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Console | MediAlert Lucknow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+  <header class="bg-slate-950 text-white border-b border-slate-800"><div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between"><div><div class="text-emerald-400 text-xs font-bold tracking-widest uppercase">MediAlert / Operations</div><h1 class="font-heading text-2xl font-bold">Admin console</h1></div><div class="flex items-center gap-4 text-sm"><span>{{ current_user.full_name }}</span><a href="{{ url_for('index') }}" class="text-emerald-300 hover:text-white">Dashboard</a><a href="{{ url_for('logout') }}" class="text-slate-300 hover:text-white">Sign out</a></div></div></header>
+  <main class="max-w-7xl mx-auto px-5 py-8 space-y-7">
+    <div><p class="text-xs uppercase tracking-widest font-bold text-emerald-700">System overview</p><h2 class="font-heading text-3xl font-bold mt-1">Care network operations</h2></div>
+    <section class="grid sm:grid-cols-2 gap-5"><div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"><p class="text-sm text-slate-500">Registered users</p><strong id="user-stat" class="block text-4xl font-heading mt-2">--</strong></div><div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"><p class="text-sm text-slate-500">Open emergency requests</p><strong id="request-stat" class="block text-4xl font-heading mt-2 text-red-700">--</strong></div></section>
+    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"><div class="p-6 border-b border-slate-200"><h2 class="font-heading text-xl font-bold">Emergency request queue</h2><p class="text-sm text-slate-500 mt-1">Review and update incoming requests.</p></div><div id="request-list" class="divide-y divide-slate-100"><p class="p-6 text-sm text-slate-500">Loading queue...</p></div></section>
+    <section class="grid lg:grid-cols-2 gap-5">
+      <form id="hospital-update" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4"><div><h2 class="font-heading text-xl font-bold">Update hospital record</h2><p class="text-sm text-slate-500 mt-1">Change live directory fields by record ID.</p></div><input name="id" required placeholder="Hospital ID" class="w-full rounded-lg border border-slate-300 p-3 text-sm"><input name="emergency" placeholder="Emergency: yes / no" class="w-full rounded-lg border border-slate-300 p-3 text-sm"><input name="icu_beds" type="number" min="0" placeholder="ICU beds" class="w-full rounded-lg border border-slate-300 p-3 text-sm"><button class="rounded-lg bg-slate-900 text-white font-bold px-4 py-3 text-sm">Save hospital update</button><p class="form-result text-sm"></p></form>
+      <form id="donor-update" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4"><div><h2 class="font-heading text-xl font-bold">Update donor availability</h2><p class="text-sm text-slate-500 mt-1">Keep registry readiness current.</p></div><input name="id" required placeholder="Donor ID" class="w-full rounded-lg border border-slate-300 p-3 text-sm"><select name="availability" class="w-full rounded-lg border border-slate-300 p-3 text-sm"><option>Available</option><option>On Call</option><option>Unavailable</option></select><input name="response_time_mins" type="number" min="0" placeholder="Response time in minutes" class="w-full rounded-lg border border-slate-300 p-3 text-sm"><button class="rounded-lg bg-emerald-700 text-white font-bold px-4 py-3 text-sm">Save donor update</button><p class="form-result text-sm"></p></form>
+    </section>
+  </main>
+  <script>
+    const requestList = document.getElementById('request-list');
+    function escapeText(value) { const node = document.createElement('span'); node.textContent = value ?? ''; return node.innerHTML; }
+    async function loadAdmin() {
+      const [statsResponse, requestsResponse] = await Promise.all([fetch('/api/admin/stats'), fetch('/api/admin/emergency-requests')]);
+      const stats = await statsResponse.json(); const data = await requestsResponse.json();
+      document.getElementById('user-stat').textContent = stats.users ?? 0; document.getElementById('request-stat').textContent = stats.open_requests ?? 0;
+      requestList.innerHTML = data.requests.length ? data.requests.map(item => `<article class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><div class="font-bold">${escapeText(item.full_name)} <span class="text-xs font-normal text-slate-500">${escapeText(item.location)}</span></div><p class="text-sm text-slate-600 mt-1">${escapeText(item.request_text)}</p><time class="text-xs text-slate-400">${escapeText(item.created_at)}</time></div><select data-id="${item.id}" class="request-status rounded-lg border border-slate-300 p-2 text-sm"><option value="open" ${item.status === 'open' ? 'selected' : ''}>Open</option><option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In progress</option><option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Resolved</option></select></article>`).join('') : '<p class="p-6 text-sm text-slate-500">No emergency requests in the queue.</p>';
+      document.querySelectorAll('.request-status').forEach(select => select.addEventListener('change', async event => { await fetch(`/api/admin/emergency-requests/${event.target.dataset.id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: event.target.value}) }); loadAdmin(); }));
+    }
+    function bindUpdate(formId, endpoint, idField) { document.getElementById(formId).addEventListener('submit', async event => { event.preventDefault(); const form = event.target; const values = Object.fromEntries(new FormData(form)); const id = values[idField]; delete values[idField]; const response = await fetch(`${endpoint}/${encodeURIComponent(id)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(values)}); const result = form.querySelector('.form-result'); result.textContent = response.ok ? 'Record updated.' : ((await response.json()).error || 'Update failed.'); result.className = `form-result text-sm ${response.ok ? 'text-emerald-700' : 'text-red-700'}`; }); }
+    bindUpdate('hospital-update', '/api/admin/hospitals', 'id'); bindUpdate('donor-update', '/api/admin/donors', 'id');
+    loadAdmin().catch(() => { requestList.innerHTML = '<p class="p-6 text-sm text-red-700">Unable to load admin data.</p>'; });
+  </script>
+</body>
+</html>

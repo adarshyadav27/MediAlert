@@ -1,8 +1,15 @@
-donor_id,name,blood_group,organ,area,availability,contact
-D001,Arjun Verma,O+,Blood,Gomti Nagar,Available,Demo contact via coordinator
-D002,Neha Singh,B-,Blood,Hazratganj,Available,Demo contact via coordinator
-D003,Ravi Gupta,A+,Blood,Aliganj,Available,Demo contact via coordinator
-D004,Meera Khan,AB+,Blood,Indira Nagar,On call,Demo contact via coordinator
-D005,Sameer Joshi,O-,Blood,Chowk,Available,Demo contact via coordinator
-D006,Ananya Mishra,A-,Kidney,Gomti Nagar,Registered,Demo contact via coordinator
-D007,Kabir Saxena,B+,Cornea,Hazratganj,Registered,Demo contact via coordinator
+donor_id,name,blood_group,organ,area,availability,contact,urgency_priority,response_time_mins,last_donation_date,verified_status,donation_count,phone
+D001,Arjun Verma,O+,Blood,Gomti Nagar,Available,Direct Emergency Helpline,High,15,2026-06-10,Verified,8,0522-891201
+D002,Neha Singh,B-,Blood,Hazratganj,Available,Direct Emergency Helpline,Critical (Rare),10,2026-05-18,Verified,12,0522-891202
+D003,Ravi Gupta,A+,Blood,Aliganj,Available,Direct Emergency Helpline,Medium,30,2026-07-01,Verified,4,0522-891203
+D004,Meera Khan,AB+,Blood,Indira Nagar,On call,Emergency Coordinator,Medium,45,2026-04-12,Verified,6,0522-891204
+D005,Sameer Joshi,O-,Blood,Chowk,Available,Direct Emergency Helpline,Critical (Universal),8,2026-06-25,Verified,15,0522-891205
+D006,Ananya Mishra,A-,Kidney,Gomti Nagar,Registered,Medical Board Verification,High,60,N/A,Verified,0,0522-891206
+D007,Kabir Saxena,B+,Cornea,Hazratganj,Registered,Eye Bank Coordinator,High,30,N/A,Verified,0,0522-891207
+D008,Dr. Vikas Rastogi,AB-,Blood,Mahanagar,Available,Direct Emergency Helpline,Critical (Rare),12,2026-07-15,Verified,10,0522-891208
+D009,Pooja Sharma,O-,Blood,Rajajipuram,Available,Direct Emergency Helpline,Critical (Universal),10,2026-06-02,Verified,9,0522-891209
+D010,Siddharth Shukla,B+,Blood,Ashiyana,Available,Direct Emergency Helpline,High,20,2026-07-20,Verified,5,0522-891210
+D011,Priya Yadav,A-,Blood,Jankipuram,Available,Direct Emergency Helpline,Critical (Rare),15,2026-06-18,Verified,7,0522-891211
+D012,Amitabh Roy,O+,Blood,Vikas Nagar,Available,Direct Emergency Helpline,Medium,25,2026-07-11,Verified,11,0522-891212
+D013,Rohan Srivastava,AB-,Blood,Alambagh,Available,Direct Emergency Helpline,Critical (Rare),10,2026-07-05,Verified,14,0522-891213
+D014,Kavita Tandon,O-,Blood,Gomti Nagar,Available,Direct Emergency Helpline,Critical (Universal),5,2026-07-28,Verified,18,0522-891214
